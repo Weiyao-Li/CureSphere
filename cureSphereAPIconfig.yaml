@@ -1,0 +1,419 @@
+swagger: '2.0'
+info:
+  title: CureSphere API configuration YAML
+  version: 1.0.0
+  description: All of the API functionalities necessary for the implementation of CureShpere.
+schemes:
+  - https
+consumes:
+  - application/x-www-form-urlencoded
+  - application/json
+produces:
+  - application/json
+paths:
+  /medicines/latest:
+    get:
+      summary: Retrieve the latest medicine name added by the doctor in ElasticSearch
+      description: Retrieves the latest medicine name added by the doctor in ElasticSearch using a Lambda function. Optionally, you can filter the search results by session ID.
+      operationId: getLatestMedicineName
+      produces:
+        - application/json
+      parameters:
+        - name: session_id
+          in: query
+          description: ID of the treatment session to filter the search results
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Latest medicine name retrieved successfully
+          schema:
+            type: object
+            properties:
+              medicine_name:
+                type: string
+        '404':
+          description: No medicine name found
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  /chatbot:
+    post:
+      summary: The endpoint for the Natural Language Understanding API.
+      description: |
+        This API takes in one or more messages from the client and returns
+        one or more messages as a response. The API leverages the NLP
+        backend functionality, paired with state and profile information
+        and returns a context-aware reply.
+      tags:
+        - NLU
+      operationId: sendMessage
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/BotRequest'
+      responses:
+        '200':
+          description: A Chatbot response
+          schema:
+            $ref: '#/definitions/BotResponse'
+        '403':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /postPrescriptionData:
+    post:
+      summary: Post prescription data by doctor such as feedback and prescription with medicines after the appointment to ElasticSearch
+      description: Post prescription data (text fields) by doctor such as feedback and prescription with medicines after the appointment to ElasticSearch
+      operationId: postPrescriptionData
+      produces:
+        - application/json
+      parameters:
+        - name: prescription_data
+          in: body
+          description: Prescription data as a JSON with fields - appointment_id, appointment_feedback and medicine_list
+          required: true
+          schema:
+            type: object
+            properties:
+              appointment_id:
+                type: string
+              appointment_feedback:
+                type: string
+              medicine_list:
+                type: array
+                items:
+                  type: string
+                  format: string
+            required:
+              - appointment_id
+              - appointment_feedback
+              - medicine_list
+      responses:
+        '200':
+          description: Prescription data posted successfully
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              data:
+                type: object
+                properties:
+                  appointment_id:
+                    type: string
+                  appointment_feedback:
+                    type: string
+                  medicine_list:
+                    type: array
+                    items:
+                      type: string
+                      format: string
+        '404':
+          description: Error in posting prescription data
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  /createPatient:
+    post:
+      summary: Create a new patient record
+      description: Creates a new patient record with the provided information
+      parameters:
+        - name: user_id
+          in: formData
+          description: The user ID of the patient
+          required: true
+          type: string
+        - name: name
+          in: formData
+          description: The name of the patient
+          required: true
+          type: string
+        - name: age
+          in: formData
+          description: The age of the patient
+          required: true
+          type: integer
+        - name: gender
+          in: formData
+          description: The gender of the patient
+          required: true
+          type: string
+        - name: insurance_provider
+          in: formData
+          description: The insurance provider of the patient
+          required: true
+          type: string
+        - name: zip_code
+          in: formData
+          description: The zip code of the patient
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully created patient record
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+              name:
+                type: string
+              age:
+                type: integer
+              gender:
+                type: string
+              insurance_provider:
+                type: string
+              zip_code:
+                type: string
+        '400':
+          description: Error in creating patient record
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  /createDoctor:
+    post:
+      summary: Register a new doctor record
+      description: Creates a new doctor record with the provided information
+      parameters:
+        - name: user_id
+          in: formData
+          description: The user ID of the doctor
+          required: true
+          type: string
+        - name: name
+          in: formData
+          description: The name of the doctor
+          required: true
+          type: string
+        - name: department
+          in: formData
+          description: The department of the doctor
+          required: true
+          type: string
+        - name: specialty
+          in: formData
+          description: The specialty of the doctor
+          required: true
+          type: string
+        - name: available_time_slots
+          in: formData
+          description: The available time slots of the doctor
+          required: true
+          type: array
+          items:
+              type: string
+              format: date-time
+        - name: clinic_zip_code
+          in: formData
+          description: The zip code of the doctor's clinic
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully registered doctor
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+              name:
+                type: string
+              department:
+                type: string
+              specialty:
+                type: string
+              available_time_slots:
+                type: array
+                items:
+                  type: string
+                  format: date-time
+              zip_code:
+                type: string
+        '400':
+          description: Error in registering doctor
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  /feedback/latest:
+    get:
+      summary: Retrieve the latest feedback by the doctor in ElasticSearch
+      description: Retrieves the latest feedback by the doctor in ElasticSearch using a Lambda function.
+      operationId: getLatestFeedback
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Latest feedback retrieved successfully
+          schema:
+            type: object
+            properties:
+              feedback:
+                type: string
+        '404':
+          description: No feedback name found
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  /patients/{id}:
+    get:
+      summary: Retrieve appointment link for patient
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID of the patient
+          required: true
+          type: string
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of the patient
+              appointment_link:
+                type: string
+                description: Link to the patient's appointment
+        404:
+          description: Patient ID not found
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:{REGION}:dynamodb:action/GetItem
+        responses:
+          default:
+            statusCode: '200'
+            responseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: >
+                #set($inputRoot = $input.path('$'))
+                {
+                  "id": "$inputRoot.Item.id.S",
+                  "appointment_link": "$inputRoot.Item.appointment_link.S"
+                }
+        requestTemplates:
+          application/json: >
+            #set($inputRoot = $input.path('$'))
+            {
+              "TableName": "PatientsDB",
+              "Key": {
+                "id": {
+                  "S": "$input.params('id')"
+                }
+              }
+            }
+        httpMethod: POST
+        type: aws_proxy
+definitions:
+    UnstructuredMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        timestamp:
+          type: string
+          format: datetime
+    Message:
+        type: object
+        properties:
+          type:
+            type: string
+          unstructured:
+            $ref: '#/definitions/UnstructuredMessage'
+    BotRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/definitions/Message'
+    BotResponse:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/definitions/Message'
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Medicine:
+      type: object
+      properties:
+        name:
+          type: string
+        manufacturer:
+          type: string
+        strength:
+          type: string
+        form:
+          type: string
+    Feedback:
+      type: object
+      properties:
+        Text:
+          type: string

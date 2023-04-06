@@ -10,9 +10,15 @@ sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
 ses = boto3.client('ses')
 
+
 def lambda_handler(event, context):
+    print(event)
+    # Get the personal token from environment variables
+    calendly_personal_token = os.environ['eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNjgwODA2ODY5LCJqdGkiOiIzY2VkOTdiZS1iZTFjLTQwMmEtOTQxMi1mZTk3OTg5NGIzMjUiLCJ1c2VyX3V1aWQiOiJhMWMwZmQ5OC1lMGVjLTQ3NmEtOTljOC04ODE4NWIyMzc0YTYifQ.6aUvcvyKcRJ8lVo_SuZ8BgMfpueVWe8YEXMd6Hy1ZqM7kHZ-YaRFSBGaaMIUjEXxvC_KNLMSQ7RPQ4jucWKJ_w']
+
     # Get message from SQS
     message = json.loads(event['Records'][0]['body'])
+    print(message)
 
     # Extract appointment details from the message
     doctor_id = message['doctor_id']
@@ -21,8 +27,7 @@ def lambda_handler(event, context):
     user_email = message['user_email']
 
     # Integrate with Calendly API
-    calendly_api_key = os.environ['CALENDLY_API_KEY']
-    headers = {'Authorization': f'Bearer {calendly_api_key}'}
+    headers = {'Authorization': f'Bearer {calendly_personal_token}'}
     calendly_url = f'https://api.calendly.com/scheduled_events/{doctor_id}'
     appointment_payload = {
         'start_time': appointment_time,

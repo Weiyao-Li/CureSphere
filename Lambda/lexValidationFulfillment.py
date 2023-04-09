@@ -255,6 +255,8 @@ def book_appointment(intent_request):
                 "Location": slots['city']['value']['resolvedValues'][0],  # not necessary?
                 "Specialty": slots['specialty']['value']['resolvedValues'][0],
                 "Date": slots['date']['value']['resolvedValues'][0],
+                # "DoctorId": #TODO
+                # "PatientId" # TODO
                 # "Email": slots['Email']['value']['resolvedValues'][0],
                 # "NumberOfPeople": slots['NumberOfPeople']['value']['resolvedValues'][0],
                 "Time": slots['time']['value']['resolvedValues'][0]

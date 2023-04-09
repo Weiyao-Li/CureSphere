@@ -10,7 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 sqs = boto3.client('sqs')
-queue_url = 'https://sqs.us-east-1.amazonaws.com/783455253012/lf1_to_lf2_v2'
+queue_url = 'https://sqs.us-east-1.amazonaws.com/227639073722/bookAppointmentSQS'
 
 
 # --- Helpers that build all the responses ---
@@ -171,17 +171,17 @@ def validate_appointment(slots):
 
     if date is not None:
         if not isvalid_date(date):
-            return build_validation_result(False, 'Date',
+            return build_validation_result(False, 'date',
                                            'I did not understand your check in date.  When would you like to check in?')
         if datetime.datetime.strptime(date, '%Y-%m-%d').date() <= datetime.date.today():
-            return build_validation_result(False, 'Date',
+            return build_validation_result(False, 'date',
                                            'Reservations must be scheduled at least one day in advance.  Can you try '
                                            'a different date?')
     else:
         return build_validation_result(
             False,
-            'Date',
-            'Elicit Date'
+            'date',
+            'Elicit date'
         )
     return {'isValid': True}
 

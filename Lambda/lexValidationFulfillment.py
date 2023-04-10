@@ -99,7 +99,7 @@ def initial_message(intent_name):
         'sessionState': {
             'dialogAction': {
                 'type': 'ElicitSlot',
-                'slotToElicit': 'Location' if intent_name == 'DiningSuggestionsIntent' else 'GreetingIntent'
+                'slotToElicit': 'patientId' if intent_name == 'BookAppointment' else 'GreetingIntent'
             },
             'intent': {
                 'confirmationState': 'None',
@@ -272,18 +272,16 @@ def dispatch(intent_request):
     Called when the user specifies an intent for this bot.
     """
     logger.debug(intent_request)
-
     slots = intent_request['sessionState']['intent']['slots']
-
-    # city = slots['city'] if 'city' in slots else None
     doctorId = slots['doctorId'] if 'doctorId' in slots else None
+    patientId = slots['patientId'] if 'patientId' in slots else None
 
     intent_name = intent_request['sessionState']['intent']['name']
 
     # Ignoring initial invocation, which happens after the first interaction of the end user with the intents in the
     # testing interface
     # if not isinstance(city, type(None)) or not isinstance(doctorId, type(None)):
-    if not isinstance(doctorId, type(None)):
+    if not isinstance(doctorId, type(None)) and not isinstance(patientId, type(None)):
         logger.debug('dispatch sessionId={}, intentName={}'.format(intent_request['sessionId'],
                                                                    intent_request['sessionState']['intent']['name']))
 

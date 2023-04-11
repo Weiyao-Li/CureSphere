@@ -5,7 +5,7 @@ from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
 REGION = 'us-east-1'
-HOST = 'search-appointments-whwmhyoyfbzboqplkkjwxnecxq.us-east-1.es.amazonaws.com'
+HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
 INDEX = 'appointment'
 
 def lambda_handler(event, context):

@@ -147,47 +147,47 @@ paths:
       operationId: createPatient
       parameters:
         - name: user_id
-          in: body
+          in: header
           description: The user ID of the patient
           required: true
           type: string
         - name: firstName
-          in: body
+          in: header
           description: The first name of the patient
           required: true
           type: string
         - name: lastName
-          in: body
+          in: header
           description: The last name of the patient
           required: true
           type: string   
         - name: age
-          in: body
+          in: header
           description: The age of the patient
           required: true
           type: integer
         - name: gender
-          in: body
+          in: header
           description: The gender of the patient
           required: true
           type: string
         - name: insurance_provider
-          in: body
+          in: header
           description: The insurance provider of the patient
           required: true
           type: string
         - name: city
-          in: body
+          in: header
           description: The city of the patient
           required: true
           type: string
         - name: zip_code
-          in: body
+          in: header
           description: The zip code of the patient
           required: true
           type: string
         - name: email
-          in: body
+          in: header
           description: The email address of the patient
           required: true
           type: string
@@ -236,32 +236,32 @@ paths:
       operationId: createDoctor
       parameters:
         - name: user_id
-          in: body
+          in: header
           description: The user ID of the doctor
           required: true
           type: string
         - name: firstName
-          in: body
+          in: header
           description: The first name of the doctor
           required: true
           type: string
         - name: lastName
-          in: body
+          in: header
           description: The last name of the doctor
           required: true
           type: string   
         - name: department
-          in: body
+          in: header
           description: The department of the doctor
           required: true
           type: string
         - name: specialty
-          in: body
+          in: header
           description: The specialty of the doctor
           required: true
           type: string
         - name: available_days
-          in: body
+          in: header
           description: The available days in the week for the doctor
           required: true
           type: array
@@ -269,7 +269,7 @@ paths:
               type: string
               format: string
         - name: available_time_slots
-          in: body
+          in: header
           description: The available time slots of the doctor
           required: true
           type: array
@@ -277,17 +277,17 @@ paths:
               type: string
               format: date-time
         - name: city
-          in: body
+          in: header
           description: The city of the doctor's clinic
           required: true
           type: string
         - name: clinic_zip_code
-          in: body
+          in: header
           description: The zip code of the doctor's clinic
           required: true
           type: string
         - name: email
-          in: body
+          in: header
           description: The email address of the doctor
           required: true
           type: string

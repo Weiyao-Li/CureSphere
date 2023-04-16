@@ -23,8 +23,7 @@ def insert_data(data, db=None, table='patients'):
 def transform_data(data):
     record = {}
     for key in data.keys():
-        if key == 'user_id':
-            record['patient_id'] = data[key]
-        else:
-            record[key] = data[key]
+        record[key] = data[key]
+    record['appointment_link'] = ''
+    record['patient_id'] = data['email']
     return record

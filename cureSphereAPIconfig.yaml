@@ -144,6 +144,7 @@ paths:
     post:
       summary: Create a new patient record
       description: Creates a new patient record with the provided information
+      operationId: createPatient
       parameters:
         - name: user_id
           in: formData
@@ -232,6 +233,7 @@ paths:
     post:
       summary: Register a new doctor record
       description: Creates a new doctor record with the provided information
+      operationId: createDoctor
       parameters:
         - name: user_id
           in: formData

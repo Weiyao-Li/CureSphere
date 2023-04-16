@@ -147,47 +147,47 @@ paths:
       operationId: createPatient
       parameters:
         - name: user_id
-          in: formData
+          in: body
           description: The user ID of the patient
           required: true
           type: string
         - name: firstName
-          in: formData
+          in: body
           description: The first name of the patient
           required: true
           type: string
         - name: lastName
-          in: formData
+          in: body
           description: The last name of the patient
           required: true
           type: string   
         - name: age
-          in: formData
+          in: body
           description: The age of the patient
           required: true
           type: integer
         - name: gender
-          in: formData
+          in: body
           description: The gender of the patient
           required: true
           type: string
         - name: insurance_provider
-          in: formData
+          in: body
           description: The insurance provider of the patient
           required: true
           type: string
         - name: city
-          in: formData
+          in: body
           description: The city of the patient
           required: true
           type: string
         - name: zip_code
-          in: formData
+          in: body
           description: The zip code of the patient
           required: true
           type: string
         - name: email
-          in: formData
+          in: body
           description: The email address of the patient
           required: true
           type: string
@@ -236,32 +236,32 @@ paths:
       operationId: createDoctor
       parameters:
         - name: user_id
-          in: formData
+          in: body
           description: The user ID of the doctor
           required: true
           type: string
         - name: firstName
-          in: formData
+          in: body
           description: The first name of the doctor
           required: true
           type: string
         - name: lastName
-          in: formData
+          in: body
           description: The last name of the doctor
           required: true
           type: string   
         - name: department
-          in: formData
+          in: body
           description: The department of the doctor
           required: true
           type: string
         - name: specialty
-          in: formData
+          in: body
           description: The specialty of the doctor
           required: true
           type: string
         - name: available_days
-          in: formData
+          in: body
           description: The available days in the week for the doctor
           required: true
           type: array
@@ -269,7 +269,7 @@ paths:
               type: string
               format: string
         - name: available_time_slots
-          in: formData
+          in: body
           description: The available time slots of the doctor
           required: true
           type: array
@@ -277,17 +277,17 @@ paths:
               type: string
               format: date-time
         - name: city
-          in: formData
+          in: body
           description: The city of the doctor's clinic
           required: true
           type: string
         - name: clinic_zip_code
-          in: formData
+          in: body
           description: The zip code of the doctor's clinic
           required: true
           type: string
         - name: email
-          in: formData
+          in: body
           description: The email address of the doctor
           required: true
           type: string

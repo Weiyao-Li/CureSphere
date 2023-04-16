@@ -9,7 +9,7 @@ def lambda_handler(event, context):
     insert_data(event)
 
 
-def insert_data(data, db=None, table='doctors'):
+def insert_data(data, db=None, table='patients'):
     if not db:
         db = boto3.resource('dynamodb')
     table = db.Table(table)
@@ -23,8 +23,7 @@ def insert_data(data, db=None, table='doctors'):
 def transform_data(data):
     record = {}
     for key in data.keys():
-        if key == 'user_id':
-            record['doctor_id'] = data[key]
-        else:
-            record[key] = data[key]
+        record[key] = data[key]
+    record['appointment_link'] = ''
+    record['patient_id'] = data['email']
     return record

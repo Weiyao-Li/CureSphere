@@ -175,6 +175,11 @@ paths:
           description: The zip code of the patient
           required: true
           type: string
+        - name: email
+          in: formData
+          description: The email address of the patient
+          required: true
+          type: string
       responses:
         '200':
           description: Successfully created patient record
@@ -193,6 +198,8 @@ paths:
                 type: string
               zip_code:
                 type: string
+              email:
+                type: string  
         '400':
           description: Error in creating patient record
           schema:
@@ -245,6 +252,11 @@ paths:
           description: The zip code of the doctor's clinic
           required: true
           type: string
+        - name: email
+          in: formData
+          description: The email address of the doctor
+          required: true
+          type: string
       responses:
         '200':
           description: Successfully registered doctor
@@ -266,6 +278,8 @@ paths:
                   format: date-time
               zip_code:
                 type: string
+              email:
+                type: string   
         '400':
           description: Error in registering doctor
           schema:

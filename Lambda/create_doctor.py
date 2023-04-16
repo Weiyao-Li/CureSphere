@@ -25,5 +25,5 @@ def transform_data(data):
     for key in data.keys():
         record[key] = data[key]
     record['appointment_link'] = ''
-    record['patient_id'] = data['email']
+    record['doctor_id'] = data['email']
     return record

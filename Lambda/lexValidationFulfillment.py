@@ -10,7 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 sqs = boto3.client('sqs')
-queue_url = 'https://sqs.us-east-1.amazonaws.com/783455253012/lf1_to_lf2_v2'
+queue_url = 'https://sqs.us-east-1.amazonaws.com/227639073722/bookAppointmentSQS'
 
 
 # --- Helpers that build all the responses ---
@@ -99,7 +99,7 @@ def initial_message(intent_name):
         'sessionState': {
             'dialogAction': {
                 'type': 'ElicitSlot',
-                'slotToElicit': 'Location' if intent_name == 'DiningSuggestionsIntent' else 'GreetingIntent'
+                'slotToElicit': 'patientId' if intent_name == 'BookAppointment' else 'GreetingIntent'
             },
             'intent': {
                 'confirmationState': 'None',
@@ -162,7 +162,6 @@ def build_validation_result(isvalid, violated_slot, message_content):
         'isValid': isvalid,
         'violatedSlot': violated_slot,
         'message': message_content
-        # 'message': {'contentType': 'PlainText', 'content': message_content}
     }
 
 
@@ -171,17 +170,17 @@ def validate_appointment(slots):
 
     if date is not None:
         if not isvalid_date(date):
-            return build_validation_result(False, 'Date',
+            return build_validation_result(False, 'date',
                                            'I did not understand your check in date.  When would you like to check in?')
         if datetime.datetime.strptime(date, '%Y-%m-%d').date() <= datetime.date.today():
-            return build_validation_result(False, 'Date',
+            return build_validation_result(False, 'date',
                                            'Reservations must be scheduled at least one day in advance.  Can you try '
                                            'a different date?')
     else:
         return build_validation_result(
             False,
-            'Date',
-            'Elicit Date'
+            'date',
+            'Elicit date'
         )
     return {'isValid': True}
 
@@ -224,21 +223,20 @@ def book_appointment(intent_request):
 
     # Otherwise, let native DM rules determine how to elicit for slots and prompt for confirmation.
     else:
-        city = try_ex(slots['city'])
-        date = try_ex(slots['date'])
-        specialty = try_ex(slots['specialty'])
-        # email = try_ex(slots['Email'])
-        # no_of_people = try_ex(slots['NumberOfPeople'])
-        booking_time = try_ex(slots['time'])
+        # # city = try_ex(slots['city'])
+        # date = try_ex(slots['date'])
+        # patientId = try_ex(slots['patientId'])
+        # doctorId = try_ex(slots['doctorId'])
+        # booking_time = try_ex(slots['time'])
 
-        if city and date and specialty and booking_time:
-            # Load confirmation history and track the current reservation.
-            reservation = json.dumps({
-                'city': city,
-                'specialty': specialty,
-                'date': date,
-                'time': booking_time
-            })
+        # if doctorId and date and booking_time:
+        #     # Load confirmation history and track the current reservation.
+        #     reservation = json.dumps({
+        #         'doctorId': doctorId,
+        #         'patientId': patientId,
+        #         'date': date,
+        #         'time': booking_time
+        #     })
 
         if confirmation_status == 'None':
             return delegate(session_attributes, active_contexts, intent,
@@ -252,13 +250,9 @@ def book_appointment(intent_request):
             print(type(intent_request['sessionState']['intent']['slots']),
                   intent_request['sessionState']['intent']['slots'])
             sqs_message = {
-                "Location": slots['city']['value']['resolvedValues'][0],  # not necessary?
-                "Specialty": slots['specialty']['value']['resolvedValues'][0],
+                "DoctorId": slots['doctorId']['value']['resolvedValues'][0],
                 "Date": slots['date']['value']['resolvedValues'][0],
-                # "DoctorId": #TODO
-                # "PatientId" # TODO
-                # "Email": slots['Email']['value']['resolvedValues'][0],
-                # "NumberOfPeople": slots['NumberOfPeople']['value']['resolvedValues'][0],
+                "PatientId": slots['patientId']['value']['resolvedValues'][0],
                 "Time": slots['time']['value']['resolvedValues'][0]
             }
             sqs.send_message(
@@ -278,17 +272,16 @@ def dispatch(intent_request):
     Called when the user specifies an intent for this bot.
     """
     logger.debug(intent_request)
-
     slots = intent_request['sessionState']['intent']['slots']
-
-    city = slots['city'] if 'city' in slots else None
-    specialty = slots['specialty'] if 'specialty' in slots else None
+    doctorId = slots['doctorId'] if 'doctorId' in slots else None
+    patientId = slots['patientId'] if 'patientId' in slots else None
 
     intent_name = intent_request['sessionState']['intent']['name']
 
     # Ignoring initial invocation, which happens after the first interaction of the end user with the intents in the
     # testing interface
-    if not isinstance(city, type(None)) or not isinstance(specialty, type(None)):
+    # if not isinstance(city, type(None)) or not isinstance(doctorId, type(None)):
+    if not isinstance(doctorId, type(None)) and not isinstance(patientId, type(None)):
         logger.debug('dispatch sessionId={}, intentName={}'.format(intent_request['sessionId'],
                                                                    intent_request['sessionState']['intent']['name']))
 

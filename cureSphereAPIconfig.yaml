@@ -144,35 +144,51 @@ paths:
     post:
       summary: Create a new patient record
       description: Creates a new patient record with the provided information
+      operationId: createPatient
       parameters:
         - name: user_id
-          in: formData
+          in: header
           description: The user ID of the patient
           required: true
           type: string
-        - name: name
-          in: formData
-          description: The name of the patient
+        - name: firstName
+          in: header
+          description: The first name of the patient
           required: true
           type: string
+        - name: lastName
+          in: header
+          description: The last name of the patient
+          required: true
+          type: string   
         - name: age
-          in: formData
+          in: header
           description: The age of the patient
           required: true
           type: integer
         - name: gender
-          in: formData
+          in: header
           description: The gender of the patient
           required: true
           type: string
         - name: insurance_provider
-          in: formData
+          in: header
           description: The insurance provider of the patient
           required: true
           type: string
+        - name: city
+          in: header
+          description: The city of the patient
+          required: true
+          type: string
         - name: zip_code
-          in: formData
+          in: header
           description: The zip code of the patient
+          required: true
+          type: string
+        - name: email
+          in: header
+          description: The email address of the patient
           required: true
           type: string
       responses:
@@ -183,16 +199,22 @@ paths:
             properties:
               user_id:
                 type: string
-              name:
+              firstName:
                 type: string
+              lastName:
+                type: string  
               age:
                 type: integer
               gender:
                 type: string
               insurance_provider:
                 type: string
+              city:
+                type: string
               zip_code:
                 type: string
+              email:
+                type: string  
         '400':
           description: Error in creating patient record
           schema:
@@ -211,38 +233,62 @@ paths:
     post:
       summary: Register a new doctor record
       description: Creates a new doctor record with the provided information
+      operationId: createDoctor
       parameters:
         - name: user_id
-          in: formData
+          in: header
           description: The user ID of the doctor
           required: true
           type: string
-        - name: name
-          in: formData
-          description: The name of the doctor
+        - name: firstName
+          in: header
+          description: The first name of the doctor
           required: true
           type: string
+        - name: lastName
+          in: header
+          description: The last name of the doctor
+          required: true
+          type: string   
         - name: department
-          in: formData
+          in: header
           description: The department of the doctor
           required: true
           type: string
         - name: specialty
-          in: formData
+          in: header
           description: The specialty of the doctor
           required: true
           type: string
+        - name: available_days
+          in: header
+          description: The available days in the week for the doctor
+          required: true
+          type: array
+          items:
+              type: string
+              format: string
         - name: available_time_slots
-          in: formData
+          in: header
           description: The available time slots of the doctor
           required: true
           type: array
           items:
               type: string
               format: date-time
+        - name: city
+          in: header
+          description: The city of the doctor's clinic
+          required: true
+          type: string
         - name: clinic_zip_code
-          in: formData
+          in: header
           description: The zip code of the doctor's clinic
+          required: true
+          type: string
+        - name: email
+          in: header
+          description: The email address of the doctor
           required: true
           type: string
       responses:
@@ -253,19 +299,30 @@ paths:
             properties:
               user_id:
                 type: string
-              name:
+              firstName:
                 type: string
+              lastName:
+                type: string  
               department:
                 type: string
               specialty:
                 type: string
+              available_days:
+                type: array
+                items:
+                  type: string
+                  format: string
               available_time_slots:
                 type: array
                 items:
                   type: string
                   format: date-time
+              city:
+                type: string
               zip_code:
                 type: string
+              email:
+                type: string   
         '400':
           description: Error in registering doctor
           schema:

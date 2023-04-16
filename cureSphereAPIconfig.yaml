@@ -175,6 +175,11 @@ paths:
           description: The insurance provider of the patient
           required: true
           type: string
+        - name: city
+          in: formData
+          description: The city of the patient
+          required: true
+          type: string
         - name: zip_code
           in: formData
           description: The zip code of the patient
@@ -202,6 +207,8 @@ paths:
               gender:
                 type: string
               insurance_provider:
+                type: string
+              city:
                 type: string
               zip_code:
                 type: string
@@ -267,6 +274,11 @@ paths:
           items:
               type: string
               format: date-time
+        - name: city
+          in: formData
+          description: The city of the doctor's clinic
+          required: true
+          type: string
         - name: clinic_zip_code
           in: formData
           description: The zip code of the doctor's clinic
@@ -303,6 +315,8 @@ paths:
                 items:
                   type: string
                   format: date-time
+              city:
+                type: string
               zip_code:
                 type: string
               email:

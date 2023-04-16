@@ -251,6 +251,14 @@ paths:
           description: The specialty of the doctor
           required: true
           type: string
+        - name: available_days
+          in: formData
+          description: The available days in the week for the doctor
+          required: true
+          type: array
+          items:
+              type: string
+              format: string
         - name: available_time_slots
           in: formData
           description: The available time slots of the doctor
@@ -285,6 +293,11 @@ paths:
                 type: string
               specialty:
                 type: string
+              available_days:
+                type: array
+                items:
+                  type: string
+                  format: string
               available_time_slots:
                 type: array
                 items:

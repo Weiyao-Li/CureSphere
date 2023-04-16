@@ -150,11 +150,16 @@ paths:
           description: The user ID of the patient
           required: true
           type: string
-        - name: name
+        - name: firstName
           in: formData
-          description: The name of the patient
+          description: The first name of the patient
           required: true
           type: string
+        - name: lastName
+          in: formData
+          description: The last name of the patient
+          required: true
+          type: string   
         - name: age
           in: formData
           description: The age of the patient
@@ -188,8 +193,10 @@ paths:
             properties:
               user_id:
                 type: string
-              name:
+              firstName:
                 type: string
+              lastName:
+                type: string  
               age:
                 type: integer
               gender:
@@ -224,11 +231,16 @@ paths:
           description: The user ID of the doctor
           required: true
           type: string
-        - name: name
+        - name: firstName
           in: formData
-          description: The name of the doctor
+          description: The first name of the doctor
           required: true
           type: string
+        - name: lastName
+          in: formData
+          description: The last name of the doctor
+          required: true
+          type: string   
         - name: department
           in: formData
           description: The department of the doctor
@@ -265,8 +277,10 @@ paths:
             properties:
               user_id:
                 type: string
-              name:
+              firstName:
                 type: string
+              lastName:
+                type: string  
               department:
                 type: string
               specialty:

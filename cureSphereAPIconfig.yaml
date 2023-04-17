@@ -146,11 +146,6 @@ paths:
       description: Creates a new patient record with the provided information
       operationId: createPatient
       parameters:
-        - name: user_id
-          in: header
-          description: The user ID of the patient
-          required: true
-          type: string
         - name: firstName
           in: header
           description: The first name of the patient
@@ -235,11 +230,6 @@ paths:
       description: Creates a new doctor record with the provided information
       operationId: createDoctor
       parameters:
-        - name: user_id
-          in: header
-          description: The user ID of the doctor
-          required: true
-          type: string
         - name: firstName
           in: header
           description: The first name of the doctor
@@ -255,11 +245,14 @@ paths:
           description: The department of the doctor
           required: true
           type: string
-        - name: specialty
+        - name: specialties
           in: header
           description: The specialty of the doctor
           required: true
-          type: string
+          type: array
+          items:
+              type: string
+              format: string
         - name: available_days
           in: header
           description: The available days in the week for the doctor
@@ -275,7 +268,7 @@ paths:
           type: array
           items:
               type: string
-              format: date-time
+              format: string
         - name: city
           in: header
           description: The city of the doctor's clinic
@@ -391,33 +384,6 @@ paths:
                 description: Link to the patient's appointment
         404:
           description: Patient ID not found
-      x-amazon-apigateway-integration:
-        uri: arn:aws:apigateway:{REGION}:dynamodb:action/GetItem
-        responses:
-          default:
-            statusCode: '200'
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            responseTemplates:
-              application/json: >
-                #set($inputRoot = $input.path('$'))
-                {
-                  "id": "$inputRoot.Item.id.S",
-                  "appointment_link": "$inputRoot.Item.appointment_link.S"
-                }
-        requestTemplates:
-          application/json: >
-            #set($inputRoot = $input.path('$'))
-            {
-              "TableName": "PatientsDB",
-              "Key": {
-                "id": {
-                  "S": "$input.params('id')"
-                }
-              }
-            }
-        httpMethod: POST
-        type: aws_proxy
 definitions:
     UnstructuredMessage:
       type: object
@@ -474,3 +440,4 @@ definitions:
       properties:
         Text:
           type: string
+          

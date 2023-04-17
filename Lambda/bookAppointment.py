@@ -6,6 +6,7 @@ import requests
 from datetime import datetime
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
+from botocore.exceptions import ClientError
 
 # Initialize AWS services
 sqs = boto3.client('sqs')
@@ -16,6 +17,44 @@ ses = boto3.client('ses')
 region = 'us-east-1'
 service = 'es'
 opensearch_host = os.environ['search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com']
+
+
+def send_email(email, subject, body_text):
+    SENDER = "wl2872@columbia.edu"
+    RECIPIENT = email
+    AWS_REGION = "us-east-1"
+    BODY_TEXT = (body_text)
+    CHARSET = "UTF-8"
+    client = boto3.client('ses', region_name=AWS_REGION)
+
+    try:
+        response = client.send_email(
+            Destination={
+                'ToAddresses': [
+                    RECIPIENT,
+                ],
+            },
+            Message={
+                'Body': {
+                    'Text': {
+                        'Charset': CHARSET,
+                        'Data': BODY_TEXT,
+                    },
+                },
+                'Subject': {
+                    'Charset': CHARSET,
+                    'Data': subject,
+                },
+            },
+            Source=SENDER,
+        )
+
+    # Error Handling
+    except ClientError as e:
+        print(e.response['Error']['Message'])
+    else:
+        print("Email sent! Message ID:"),
+        print(response['MessageId'])
 
 
 def get_aws_auth(region, service):
@@ -119,25 +158,14 @@ def lambda_handler(event, context):
     opensearch.index(index='appointments', doc_type='_doc', id=appointment_id, body=appointment_info)
 
     # Send appointment confirmed email to user email (SES)
-    subject = 'Appointment Confirmation'
-    body = f'Dear {patient["first_name"]} {patient["last_name"]},\n\nYour appointment with Doctor {doctor["first_name"]} {doctor["last_name"]} ({specialty}) has been confirmed for {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
+    subject_patient = 'Appointment Confirmation'
+    body_patient = f'Dear {patient["first_name"]} {patient["last_name"]},\n\nYour appointment with Doctor {doctor["first_name"]} {doctor["last_name"]} ({specialty}) has been confirmed for {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
+    send_email(user_email, subject_patient, body_patient)
 
-    ses.send_email(
-        Source='wl2872@columbia.edu',
-        Destination={
-            'ToAddresses': [user_email]
-        },
-        Message={
-            'Subject': {
-                'Data': subject
-            },
-            'Body': {
-                'Text': {
-                    'Data': body
-                }
-            }
-        }
-    )
+    # Send appointment notification to the doctor
+    subject_doctor = 'New Appointment Notification'
+    body_doctor = f'Dear Doctor {doctor["first_name"]} {doctor["last_name"]},\n\nYou have a new appointment with {patient["first_name"]} {patient["last_name"]} ({user_email}) on {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
+    send_email(doctor['email'], subject_doctor, body_doctor)
 
     return {
         'statusCode': 200,

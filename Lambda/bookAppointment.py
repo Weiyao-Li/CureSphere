@@ -1,34 +1,52 @@
+Copy
+code
 import os
 import json
 import boto3
 import uuid
 import requests
+from datetime import datetime
+from opensearchpy import OpenSearch, RequestsHttpConnection
+from requests_aws4auth import AWS4Auth
 
 # Initialize AWS services
 sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
 ses = boto3.client('ses')
-opensearch = boto3.client('opensearch', region_name='us-east')
+
+# OpenSearch configuration
+region = 'us-east-1'
+service = 'es'
+opensearch_host = os.environ['search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com']
 
 
-def index_appointment(opensearch, appointment_info):
-    index_name = "appointments"
-    document_id = appointment_info["appointment_id"]
-
-    response = opensearch.index_document(
-        IndexName=index_name,
-        DocumentID=document_id,
-        Document=appointment_info
+def get_aws_auth(region, service):
+    credentials = boto3.Session().get_credentials()
+    awsauth = AWS4Auth(
+        credentials.access_key,
+        credentials.secret_key,
+        region,
+        service,
+        session_token=credentials.token
     )
+    return awsauth
 
-    return response
+
+# Initialize OpenSearch client
+opensearch = OpenSearch(
+    hosts=[{'host': opensearch_host, 'port': 443}],
+    http_auth=get_aws_auth(region, service),
+    use_ssl=True,
+    verify_certs=True,
+    connection_class=RequestsHttpConnection
+)
+
+# Get the personal token from environment variables
+calendly_personal_token = os.environ[
+    'eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNjgwODA2ODY5LCJqdGkiOiIzY2VkOTdiZS1iZTFjLTQwMmEtOTQxMi1mZTk3OTg5NGIzMjUiLCJ1c2VyX3V1aWQiOiJhMWMwZmQ5OC1lMGVjLTQ3NmEtOTljOC04ODE4NWIyMzc0YTYifQ.6aUvcvyKcRJ8lVo_SuZ8BgMfpueVWe8YEXMd6Hy1ZqM7kHZ-YaRFSBGaaMIUjEXxvC_KNLMSQ7RPQ4jucWKJ_w']
 
 
 def lambda_handler(event, context):
-    # Get the personal token from environment variables
-    calendly_personal_token = os.environ[
-        'eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNjgwODA2ODY5LCJqdGkiOiIzY2VkOTdiZS1iZTFjLTQwMmEtOTQxMi1mZTk3OTg5NGIzMjUiLCJ1c2VyX3V1aWQiOiJhMWMwZmQ5OC1lMGVjLTQ3NmEtOTljOC04ODE4NWIyMzc0YTYifQ.6aUvcvyKcRJ8lVo_SuZ8BgMfpueVWe8YEXMd6Hy1ZqM7kHZ-YaRFSBGaaMIUjEXxvC_KNLMSQ7RPQ4jucWKJ_w']
-
     # Get message from SQS
     message = json.loads(event['Records'][0]['body'])
 
@@ -86,18 +104,21 @@ def lambda_handler(event, context):
         ExpressionAttributeValues={':appointment': [appointment_id], ':empty_list': []}
     )
 
+    # Index appointment in OpenSearch
     appointment_info = {
         'appointment_id': appointment_id,
         'doctor_id': doctor_id,
         'patient_id': patient_id,
+        'date': appointment_date,
+        'time': appointment_time,
         'location': location,
         'specialty': specialty,
-        'appointment_date': appointment_date,
-        'appointment_time': appointment_time
+        'doctor_name': f"{doctor['first_name']} {doctor['last_name']}",
+        'patient_name': f"{patient['first_name']} {patient['last_name']}",
+        'user_email': user_email
     }
 
-    # Index the appointment in the OpenSearch cluster
-    index_appointment(opensearch, appointment_info)
+    opensearch.index(index='appointments', doc_type='_doc', id=appointment_id, body=appointment_info)
 
     # Send appointment confirmed email to user email (SES)
     subject = 'Appointment Confirmation'

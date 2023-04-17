@@ -5,8 +5,27 @@ from botocore.exceptions import ClientError
 
 
 def lambda_handler(event, context):
-    print(event)
-    insert_data(event)
+    try:
+        ddb_results = insert_data(event['headers'])
+        return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': '*'
+                },
+                'body': json.dumps({'results': ddb_results})
+            }
+    except Exception as e:
+        return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': '*'
+                },
+                'body': f'Invalid input:{e}'
+            }
 
 
 def insert_data(data, db=None, table='patients'):
@@ -24,6 +43,6 @@ def transform_data(data):
     record = {}
     for key in data.keys():
         record[key] = data[key]
-    record['appointment_link'] = ''
+    record['appointment_id'] = ''
     record['patient_id'] = data['email']
     return record

@@ -3,16 +3,17 @@ import json
 import boto3
 import uuid
 import requests
-from datetime import datetime
 
 # Initialize AWS services
 sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
 ses = boto3.client('ses')
 
+
 def lambda_handler(event, context):
     # Get the personal token from environment variables
-    calendly_personal_token = os.environ['eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNjgwODA2ODY5LCJqdGkiOiIzY2VkOTdiZS1iZTFjLTQwMmEtOTQxMi1mZTk3OTg5NGIzMjUiLCJ1c2VyX3V1aWQiOiJhMWMwZmQ5OC1lMGVjLTQ3NmEtOTljOC04ODE4NWIyMzc0YTYifQ.6aUvcvyKcRJ8lVo_SuZ8BgMfpueVWe8YEXMd6Hy1ZqM7kHZ-YaRFSBGaaMIUjEXxvC_KNLMSQ7RPQ4jucWKJ_w']
+    calendly_personal_token = os.environ[
+        'eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNjgwODA2ODY5LCJqdGkiOiIzY2VkOTdiZS1iZTFjLTQwMmEtOTQxMi1mZTk3OTg5NGIzMjUiLCJ1c2VyX3V1aWQiOiJhMWMwZmQ5OC1lMGVjLTQ3NmEtOTljOC04ODE4NWIyMzc0YTYifQ.6aUvcvyKcRJ8lVo_SuZ8BgMfpueVWe8YEXMd6Hy1ZqM7kHZ-YaRFSBGaaMIUjEXxvC_KNLMSQ7RPQ4jucWKJ_w']
 
     # Get message from SQS
     message = json.loads(event['Records'][0]['body'])
@@ -20,11 +21,23 @@ def lambda_handler(event, context):
     # Extract appointment details from the message
     doctor_id = message['Doctor_ID']
     patient_id = message['Patient_ID']
-    location = message['Location']
-    specialty = message['Specialty']
     appointment_date = message['Date']
     appointment_time = message['Time']
-    user_email = message['Email']
+
+    # Retrieve doctor and patient information from DynamoDB
+    doctor_table = dynamodb.Table('DoctorDB')
+    patient_table = dynamodb.Table('PatientDB')
+
+    doctor_response = doctor_table.get_item(Key={'doctor_id': doctor_id})
+    patient_response = patient_table.get_item(Key={'patient_id': patient_id})
+
+    doctor = doctor_response['Item']
+    patient = patient_response['Item']
+
+    # Extract relevant information from the database
+    user_email = patient['email']
+    location = doctor['location']
+    specialty = doctor['specialty']
 
     # Combine date and time for Calendly appointment
     appointment_datetime = f'{appointment_date}T{appointment_time}'
@@ -46,24 +59,22 @@ def lambda_handler(event, context):
     # Create unique appointment ID
     appointment_id = str(uuid.uuid4())
 
-    # Post to both Doctor and Patient DB
-    doctor_table = dynamodb.Table('Doctor')
-    patient_table = dynamodb.Table('Patient')
-    appointment_info = {
-        'appointment_id': appointment_id,
-        'doctor_id': doctor_id,
-        'patient_id': patient_id,
-        'location': location,
-        'specialty': specialty,
-        'appointment_date': appointment_date,
-        'appointment_time': appointment_time
-    }
-    doctor_table.put_item(Item=appointment_info)
-    patient_table.put_item(Item=appointment_info)
+    # Update Doctor and Patient DB with appointment information
+    doctor_table.update_item(
+        Key={'doctor_id': doctor_id},
+        UpdateExpression='SET appointments = list_append(if_not_exists(appointments, :empty_list), :appointment)',
+        ExpressionAttributeValues={':appointment': [appointment_id], ':empty_list': []}
+    )
+
+    patient_table.update_item(
+        Key={'patient_id': patient_id},
+        UpdateExpression='SET appointments = list_append(if_not_exists(appointments, :empty_list), :appointment)',
+        ExpressionAttributeValues={':appointment': [appointment_id], ':empty_list': []}
+    )
 
     # Send appointment confirmed email to user email (SES)
     subject = 'Appointment Confirmation'
-    body = f'Dear user,\n\nYour appointment with Doctor {doctor_id} has been confirmed for {appointment_date} at {appointment_time}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
+    body = f'Dear {patient["first_name"]} {patient["last_name"]},\n\nYour appointment with Doctor {doctor["first_name"]} {doctor["last_name"]} ({specialty}) has been confirmed for {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
 
     ses.send_email(
         Source='noreply@example.com',
@@ -86,7 +97,6 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': 'Appointment booked and confirmation email sent.'
     }
-
 
     # TODO - integrate with Calendly API
 

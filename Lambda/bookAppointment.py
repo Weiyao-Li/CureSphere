@@ -8,6 +8,20 @@ import requests
 sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
 ses = boto3.client('ses')
+opensearch = boto3.client('opensearch', region_name='us-east')
+
+
+def index_appointment(opensearch, appointment_info):
+    index_name = "appointments"
+    document_id = appointment_info["appointment_id"]
+
+    response = opensearch.index_document(
+        IndexName=index_name,
+        DocumentID=document_id,
+        Document=appointment_info
+    )
+
+    return response
 
 
 def lambda_handler(event, context):
@@ -19,14 +33,14 @@ def lambda_handler(event, context):
     message = json.loads(event['Records'][0]['body'])
 
     # Extract appointment details from the message
-    doctor_id = message['Doctor_ID']
-    patient_id = message['Patient_ID']
+    doctor_id = message['DoctorId']
+    patient_id = message['PatientId']
     appointment_date = message['Date']
     appointment_time = message['Time']
 
     # Retrieve doctor and patient information from DynamoDB
-    doctor_table = dynamodb.Table('DoctorDB')
-    patient_table = dynamodb.Table('PatientDB')
+    doctor_table = dynamodb.Table('doctors')
+    patient_table = dynamodb.Table('patients')
 
     doctor_response = doctor_table.get_item(Key={'doctor_id': doctor_id})
     patient_response = patient_table.get_item(Key={'patient_id': patient_id})
@@ -71,6 +85,19 @@ def lambda_handler(event, context):
         UpdateExpression='SET appointments = list_append(if_not_exists(appointments, :empty_list), :appointment)',
         ExpressionAttributeValues={':appointment': [appointment_id], ':empty_list': []}
     )
+
+    appointment_info = {
+        'appointment_id': appointment_id,
+        'doctor_id': doctor_id,
+        'patient_id': patient_id,
+        'location': location,
+        'specialty': specialty,
+        'appointment_date': appointment_date,
+        'appointment_time': appointment_time
+    }
+
+    # Index the appointment in the OpenSearch cluster
+    index_appointment(opensearch, appointment_info)
 
     # Send appointment confirmed email to user email (SES)
     subject = 'Appointment Confirmation'

@@ -123,7 +123,7 @@ def lambda_handler(event, context):
     body = f'Dear {patient["first_name"]} {patient["last_name"]},\n\nYour appointment with Doctor {doctor["first_name"]} {doctor["last_name"]} ({specialty}) has been confirmed for {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
 
     ses.send_email(
-        Source='noreply@example.com',
+        Source='wl2872@columbia.edu',
         Destination={
             'ToAddresses': [user_email]
         },

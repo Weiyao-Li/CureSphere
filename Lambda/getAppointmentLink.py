@@ -11,6 +11,8 @@ INDEX = 'appointment'
 def lambda_handler(event, context):
     print('Received event: ' + json.dumps(event))
     
+    # Ideally appointment ID is quried from patients or doctors DB based on input event - 
+    # 1) doctor/patient role, 2) email address (which is doctor_id/patient_id, PK of table)
     results = query('a_id3') #appointment id
     print("results : ", results)
     #results -> [{'a_id': 'a_id1', 'feedback': 'fb1', 'medicine': 'm1', 'a_link': 'a_link1'}]

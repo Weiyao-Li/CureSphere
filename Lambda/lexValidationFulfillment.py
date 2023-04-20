@@ -1,12 +1,9 @@
-import math
 import datetime
-
 import boto3
 import json
 import time
 import os
 import logging
-import re
 
 # maybe import math and re, To-do later
 
@@ -176,17 +173,13 @@ def BookAppointmentIntent(intent_request):
 
     if not Date or not Time or not patientId or not doctorId:
         return delegate(intent_request, get_slots(intent_request))
-    # else:
-    #     send_message_to_SQS(
-    #         Location,
-    #         Cuisine,
-    #         Date,
-    #         Time,
-    #         Numberofpeople,
-    #         Email
-    #
-    #     )
     else:
+        send_message_to_SQS(
+            Date,
+            Time,
+            patientId,
+            doctorId
+        )
         return close(intent_request,
                      session_attributes,
                      'Fulfilled',
@@ -211,40 +204,32 @@ def dispatch(intent_request):
     print("Error!", intent_name)
 
 
-# def send_message_to_SQS(Location, Cuisine, Date, Time, Numberofpeople, Email):
-#     sqs = boto3.client('sqs')
-#
-#     response = sqs.send_message(
-#         QueueUrl="https://sqs.us-east-1.amazonaws.com/778348423801/RestaurantQueue",
-#         MessageAttributes={
-#             'Location': {
-#                 'DataType': 'String',
-#                 'StringValue': Location
-#             },
-#             'Cuisine': {
-#                 'DataType': 'String',
-#                 'StringValue': Cuisine
-#             },
-#             'Date': {
-#                 'DataType': 'String',
-#                 'StringValue': Date
-#             },
-#             'Time': {
-#                 'DataType': 'String',
-#                 'StringValue': Time
-#             },
-#             'Numberofpeople': {
-#                 'DataType': 'Number',
-#                 'StringValue': str(Numberofpeople)
-#             },
-#             'Email': {
-#                 'DataType': 'String',
-#                 'StringValue': Email
-#             }
-#         },
-#
-#         MessageBody=('Information about user inputs of Dining Chatbot.'),
-#     )
+def send_message_to_SQS(Date, Time, patientId, doctorId):
+    sqs = boto3.client('sqs')
+
+    response = sqs.send_message(
+        QueueUrl="https://sqs.us-east-1.amazonaws.com/227639073722/bookAppointmentSQS",
+        MessageAttributes={
+            'Date': {
+                'DataType': 'String',
+                'StringValue': Date
+            },
+            'Time': {
+                'DataType': 'String',
+                'StringValue': Time
+            },
+            'patientId': {
+                'DataType': 'String',
+                'StringValue': patientId
+            },
+            'doctorId': {
+                'DataType': 'String',
+                'StringValue': doctorId
+            }
+        },
+
+        MessageBody=('Information about user inputs of Dining Chatbot.'),
+    )
 
 
 # --- Main handler ---

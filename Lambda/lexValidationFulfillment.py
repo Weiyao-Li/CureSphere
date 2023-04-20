@@ -1,311 +1,267 @@
-import json
+import math
 import datetime
+
+import boto3
+import json
 import time
 import os
-import dateutil.parser
 import logging
-import boto3
+import re
+
+# maybe import math and re, To-do later
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-sqs = boto3.client('sqs')
-queue_url = 'https://sqs.us-east-1.amazonaws.com/227639073722/bookAppointmentSQS'
+
+# --- Helpers that build all of the responses ---
+
+def get_slots(intent_request):
+    return intent_request['sessionState']['intent']['slots']
 
 
-# --- Helpers that build all the responses ---
+def get_session_attributes(intent_request):
+    sessionState = intent_request['sessionState']
+    if 'sessionAttributes' in sessionState:
+        return sessionState['sessionAttributes']
+    return {}
 
 
-def elicit_slot(session_attributes, active_contexts, intent, slot_to_elicit, message):
-    return {
-        'sessionState': {
-            'activeContexts': [{
-                'name': 'intentContext',
-                'contextAttributes': active_contexts,
-                'timeToLive': {
-                    'timeToLiveInSeconds': 600,
-                    'turnsToLive': 1
-                }
-            }],
-            'sessionAttributes': session_attributes,
-            'dialogAction': {
-                'type': 'ElicitSlot',
-                'slotToElicit': slot_to_elicit
-            },
-            'intent': intent,
-        }
-    }
-
-
-def confirm_intent(active_contexts, session_attributes, intent, message):
-    return {
-        'sessionState': {
-            'activeContexts': [active_contexts],
-            'sessionAttributes': session_attributes,
-            'dialogAction': {
-                'type': 'ConfirmIntent'
-            },
-            'intent': intent
-        }
-    }
-
-
-def close(session_attributes, active_contexts, fulfillment_state, intent, message):
-    response = {
-        'sessionState': {
-            'activeContexts': [{
-                'name': 'intentContext',
-                'contextAttributes': active_contexts,
-                'timeToLive': {
-                    'timeToLiveInSeconds': 600,
-                    'turnsToLive': 1
-                }
-            }],
-            'sessionAttributes': session_attributes,
-            'dialogAction': {
-                'type': 'Close',
-            },
-            'intent': intent,
-        },
-        'messages': [{'contentType': 'PlainText', 'content': message}]
-    }
-
-    return response
-
-
-def delegate(session_attributes, active_contexts, intent, message):
-    return {
-        'sessionState': {
-            'activeContexts': [{
-                'name': 'intentContext',
-                'contextAttributes': active_contexts,
-                'timeToLive': {
-                    'timeToLiveInSeconds': 600,
-                    'turnsToLive': 1
-                }
-            }],
-            'sessionAttributes': session_attributes,
-            'dialogAction': {
-                'type': 'Delegate',
-            },
-            'intent': intent,
-        },
-        'messages': [{'contentType': 'PlainText', 'content': message}]
-    }
-
-
-def initial_message(intent_name):
-    response = {
-        'sessionState': {
-            'dialogAction': {
-                'type': 'ElicitSlot',
-                'slotToElicit': 'patientId' if intent_name == 'BookAppointment' else 'GreetingIntent'
-            },
-            'intent': {
-                'confirmationState': 'None',
-                'name': intent_name,
-                'state': 'InProgress'
-            }
-        }
-    }
-
-    return response
-
-
-# --- Helper Functions ---
-
-
-def safe_int(n):
-    """
-    Safely convert n value to int.
-    """
-    if n is not None:
-        return int(n)
-    return n
-
-
-def try_ex(value):
-    """
-    Call passed in function in try block. If KeyError is encountered return None.
-    This function is intended to be used to safely access dictionary of the Slots section in the payloads.
-    Note that this function would have negative impact on performance.
-    """
-
-    if value is not None:
-        return value['value']['interpretedValue']
+def get_slot(intent_request, slotName):
+    slots = get_slots(intent_request)
+    if slots is not None and slotName in slots and slots[slotName] is not None:
+        logger.debug('resolvedValue={}'.format(slots[slotName]['value']['resolvedValues']))
+        return slots[slotName]['value']['interpretedValue']
     else:
         return None
 
 
-# keep
-# def isvalid_city(city):
-#     valid_cities = ['new york']
-#     return city.lower() in valid_cities
-#
-#
-# def isvalid_cuisine(cuisine):
-#     valid_cuisines = ['greek', 'indian', 'american', 'french', 'italian']
-#     return cuisine.lower() in valid_cuisines
+def elicit_slot(intent_request, session_attributes, slot, slots, message):
+    print("in elicitng slot")
+    return {'sessionState': {'dialogAction': {'type': 'ElicitSlot',
+                                              'slotToElicit': slot,
+                                              },
+                             'intent': {'name': intent_request['sessionState']['intent']['name'],
+                                        'slots': slots,
+                                        'state': 'InProgress'
+                                        },
+                             'sessionAttributes': session_attributes,
+                             #  'originatingRequestId': '70d49ca7-53de-4e1e-ac0a-70ecfc45b70a'
+                             },
+            'sessionId': intent_request['sessionId'],
+            'messages': [message],
+            'requestAttributes': intent_request['requestAttributes']
+            if 'requestAttributes' in intent_request else None
+            }
 
 
-# keep
-def isvalid_date(date):
-    try:
-        dateutil.parser.parse(date)
-        return True
-    except ValueError:
-        return False
+def build_validation_result(isvalid, violated_slot, slot_elicitation_style, message_content):
+    return {'isValid': isvalid,
+            'violatedSlot': violated_slot,
+            'slotElicitationStyle': slot_elicitation_style,
+            'message': {'contentType': 'PlainText',
+                        'content': message_content}
+            }
 
 
-def build_validation_result(isvalid, violated_slot, message_content):
+def GetItemInDatabase(postal_code):
+    """
+    Perform database check for transcribed postal code. This is a no-op
+    check that shows that postal_code can't be found in the database.
+    """
+    return None
+
+
+def close(intent_request, session_attributes, fulfillment_state, message):
+    intent_request['sessionState']['intent']['state'] = fulfillment_state
     return {
-        'isValid': isvalid,
-        'violatedSlot': violated_slot,
-        'message': message_content
+        'sessionState': {
+            'sessionAttributes': session_attributes,
+            'dialogAction': {
+                'type': 'Close'
+            },
+            'intent': intent_request['sessionState']['intent'],
+            'originatingRequestId': '2d3558dc-780b-422f-b9ec-7f6a1bd63f2e'
+        },
+        'messages': [message],
+        'sessionId': intent_request['sessionId'],
+        'requestAttributes': intent_request['requestAttributes'] if 'requestAttributes' in intent_request else None
     }
 
 
-def validate_appointment(slots):
-    date = try_ex(slots['date'])
+def parse_int(n):
+    try:
+        return int(n)
+    except ValueError:
+        return float('nan')
 
-    if date is not None:
-        if not isvalid_date(date):
-            return build_validation_result(False, 'date',
-                                           'I did not understand your check in date.  When would you like to check in?')
-        if datetime.datetime.strptime(date, '%Y-%m-%d').date() <= datetime.date.today():
-            return build_validation_result(False, 'date',
-                                           'Reservations must be scheduled at least one day in advance.  Can you try '
-                                           'a different date?')
+
+def delegate(intent_request, slots):
+    return {
+        "sessionState": {
+            "dialogAction": {
+                "type": "Delegate"
+            },
+            "intent": {
+                "name": intent_request['sessionState']['intent']['name'],
+                "slots": slots,
+                "state": "ReadyForFulfillment"
+            },
+            'sessionId': intent_request['sessionId'],
+            "requestAttributes": intent_request['requestAttributes'] if 'requestAttributes' in intent_request else None
+        }}
+
+def current_time():
+    now = datetime.datetime.now()
+    hour = str(now.hour).zfill(2)
+    minute = str(now.minute).zfill(2)
+    return f"{hour}:{minute}"
+
+# patientId, date, time, doctorId
+def validationProcess(Date, Time):
+    # Date Validation
+    if Date:
+        print("Debug: date is:", Date)
+        year, month, day = map(int, Date.split('-'))
+        date_to_check = datetime.date(year, month, day)
+        if date_to_check < datetime.date.today():
+            return build_validation_result(False, 'Date', 'SpellByWord', 'Please enter a valid Dining date')
+
+        if Time:
+            print("Debug: time is:", Time)
+            year, month, day = map(int, Date.split('-'))
+            date_to_check = datetime.date(year, month, day)
+            now = current_time()
+            print("this is currwnt time")
+            print(now)
+            if (date_to_check <= datetime.date.today() and Time < now) or not Time:
+                print("error in time")
+                return build_validation_result(False, 'Time', 'SpellByWord', 'Please enter valid time')
+    print('returningTrue!!!!!')
+    return build_validation_result(True,
+                                   '',
+                                   'SpellbyWord',
+                                   '')
+
+def BookAppointmentIntent(intent_request):
+    state = intent_request['sessionState']
+
+    Date = get_slot(intent_request, "date")
+    Time = get_slot(intent_request, "time")
+    patientId = get_slot(intent_request, "patientId")
+    doctorId = get_slot(intent_request, "doctorId")
+
+    session_attributes = get_session_attributes(intent_request)
+
+    # type of event that triggered the function
+    source = intent_request['invocationSource']
+
+    if source == 'DialogCodeHook':
+        print("Here we are in DialogCodeHook!")
+
+        slots = get_slots(intent_request)
+
+        resOfValidation = validationProcess(Date, Time)
+        print("result of validation")
+        print(resOfValidation)
+        if not resOfValidation['isValid']:
+            slots[resOfValidation['violatedSlot']] = None
+            print("now eliciting")
+            print(resOfValidation)
+            result = elicit_slot(intent_request, session_attributes, resOfValidation['violatedSlot'], slots,
+                                 resOfValidation['message'])
+            print("the result of elicit slot")
+            print(result)
+            return result
+
+    if not Date or not Time or not patientId or not doctorId:
+        return delegate(intent_request, get_slots(intent_request))
+    # else:
+    #     send_message_to_SQS(
+    #         Location,
+    #         Cuisine,
+    #         Date,
+    #         Time,
+    #         Numberofpeople,
+    #         Email
+    #
+    #     )
     else:
-        return build_validation_result(
-            False,
-            'date',
-            'Elicit date'
-        )
-    return {'isValid': True}
-
-
-""" --- Functions that control the bot's behavior --- """
-
-
-def book_appointment(intent_request):
-    """
-    Performs dialog management and fulfillment for booking a hotel.
-    Beyond fulfillment, the implementation for this intent demonstrates the following:
-    1) Use of elicitSlot in slot validation and re-prompting
-    2) Use of sessionAttributes to pass information that can be used to guide conversation
-    """
-
-    intent = intent_request['sessionState']['intent']
-    slots = intent_request['sessionState']['intent']['slots']
-
-    session_attributes = {'sessionId': intent_request['sessionId']}
-
-    active_contexts = {}
-
-    confirmation_status = intent_request['sessionState']['intent']['confirmationState']
-
-    # Validate any slots which have been specified.  If any are invalid, re-elicit for their value
-    # TODO change validate
-    validation_result = validate_appointment(intent_request['sessionState']['intent']['slots'])
-
-    if not validation_result['isValid']:
-        slots = intent_request['sessionState']['intent']['slots']
-        slots[validation_result['violatedSlot']] = None
-
-        return elicit_slot(
-            session_attributes,
-            active_contexts,
-            intent_request['sessionState']['intent'],
-            validation_result['violatedSlot'],
-            validation_result['message']
-        )
-
-    # Otherwise, let native DM rules determine how to elicit for slots and prompt for confirmation.
-    else:
-        # # city = try_ex(slots['city'])
-        # date = try_ex(slots['date'])
-        # patientId = try_ex(slots['patientId'])
-        # doctorId = try_ex(slots['doctorId'])
-        # booking_time = try_ex(slots['time'])
-
-        # if doctorId and date and booking_time:
-        #     # Load confirmation history and track the current reservation.
-        #     reservation = json.dumps({
-        #         'doctorId': doctorId,
-        #         'patientId': patientId,
-        #         'date': date,
-        #         'time': booking_time
-        #     })
-
-        if confirmation_status == 'None':
-            return delegate(session_attributes, active_contexts, intent,
-                            'Confirm book appointment')
-
-        elif confirmation_status == 'Confirmed':
-            # Creating the request for restaurant suggestion. In a real application, this would likely involve a call
-            # to a backend service.
-            intent['confirmationState'] = "Confirmed"
-            intent['state'] = "Fulfilled"
-            print(type(intent_request['sessionState']['intent']['slots']),
-                  intent_request['sessionState']['intent']['slots'])
-            sqs_message = {
-                "DoctorId": slots['doctorId']['value']['resolvedValues'][0],
-                "Date": slots['date']['value']['resolvedValues'][0],
-                "PatientId": slots['patientId']['value']['resolvedValues'][0],
-                "Time": slots['time']['value']['resolvedValues'][0]
-            }
-            sqs.send_message(
-                QueueUrl=queue_url,
-                MessageBody=json.dumps(sqs_message),
-            )
-
-            return close(session_attributes, active_contexts, 'Fulfilled', intent,
-                         'Thanks, I have placed your appointment! Please let me know if you would like further '
-                         'appointments '
-                         )
+        return close(intent_request,
+                     session_attributes,
+                     'Fulfilled',
+                     {'contentType': 'PlainText',
+                      'content': 'Thanks. We will send you email shortly'})
 
 
 # --- Intents ---
+
 def dispatch(intent_request):
     """
     Called when the user specifies an intent for this bot.
     """
-    logger.debug(intent_request)
-    slots = intent_request['sessionState']['intent']['slots']
-    doctorId = slots['doctorId'] if 'doctorId' in slots else None
-    patientId = slots['patientId'] if 'patientId' in slots else None
-
     intent_name = intent_request['sessionState']['intent']['name']
+    # state = intent_request['sessionState']
 
-    # Ignoring initial invocation, which happens after the first interaction of the end user with the intents in the
-    # testing interface
-    # if not isinstance(city, type(None)) or not isinstance(doctorId, type(None)):
-    if not isinstance(doctorId, type(None)) and not isinstance(patientId, type(None)):
-        logger.debug('dispatch sessionId={}, intentName={}'.format(intent_request['sessionId'],
-                                                                   intent_request['sessionState']['intent']['name']))
+    if intent_name == 'BookAppointment':
+        result = BookAppointmentIntent(intent_request)
+        print("the final BookAppointment intent")
+        print(result)
+        return result
+    print("Error!", intent_name)
 
-        # Dispatch to your bot's intent handlers
-        if intent_name == 'BookAppointment':
-            return book_appointment(intent_request)
 
-        raise Exception('Intent with name ' + intent_name + ' not supported')
-
-    logger.debug('Conversation initiated')
-    return initial_message(intent_name)
+# def send_message_to_SQS(Location, Cuisine, Date, Time, Numberofpeople, Email):
+#     sqs = boto3.client('sqs')
+#
+#     response = sqs.send_message(
+#         QueueUrl="https://sqs.us-east-1.amazonaws.com/778348423801/RestaurantQueue",
+#         MessageAttributes={
+#             'Location': {
+#                 'DataType': 'String',
+#                 'StringValue': Location
+#             },
+#             'Cuisine': {
+#                 'DataType': 'String',
+#                 'StringValue': Cuisine
+#             },
+#             'Date': {
+#                 'DataType': 'String',
+#                 'StringValue': Date
+#             },
+#             'Time': {
+#                 'DataType': 'String',
+#                 'StringValue': Time
+#             },
+#             'Numberofpeople': {
+#                 'DataType': 'Number',
+#                 'StringValue': str(Numberofpeople)
+#             },
+#             'Email': {
+#                 'DataType': 'String',
+#                 'StringValue': Email
+#             }
+#         },
+#
+#         MessageBody=('Information about user inputs of Dining Chatbot.'),
+#     )
 
 
 # --- Main handler ---
 
-
 def lambda_handler(event, context):
     """
-    Route the incoming request based on intent.
+    Route the incoming request based on the intent.
     The JSON body of the request is provided in the event slot.
     """
-    # By default, treat the user request as coming from the America/New_York time zone.
+
+    # By default, treat the user request as coming from
+    # Eastern Standard Time.
     os.environ['TZ'] = 'America/New_York'
     time.tzset()
-    # logger.debug('event.bot.name={}'.format(event['bot']['name']))
-    print('dispatch is', dispatch(event))
-    return dispatch(event)
+
+    logger.debug('event={}'.format(json.dumps(event)))
+    response = dispatch(event)
+    print("The final response of the lambda handler")
+    print(response)
+    return response

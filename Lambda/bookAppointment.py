@@ -1,28 +1,177 @@
-import os
 import json
+import os
+import random
 import boto3
-import uuid
-import requests
-from datetime import datetime
 from opensearchpy import OpenSearch, RequestsHttpConnection
+from boto3.dynamodb.conditions import Key, Attr
 from requests_aws4auth import AWS4Auth
+from botocore.vendored import requests
 from botocore.exceptions import ClientError
 
-# Initialize AWS services
-sqs = boto3.client('sqs')
-dynamodb = boto3.resource('dynamodb')
-ses = boto3.client('ses')
+REGION = 'us-east-1'
+HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
+INDEX = 'appointments'
 
-# OpenSearch configuration
-region = 'us-east-1'
-service = 'es'
-opensearch_host = os.environ['search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com']
+
+# USERTABLE= 'user_history'
+#
+# def insert_table(email,data):
+#     res = [{'email':email, 'data':data}]
+#     db = boto3.resource('dynamodb')
+#     table = db.Table(USERTABLE)
+#
+#     for data in res:
+#         response = table.put_item(Item=data)
+#     print('@insert_data: response', response)
+
+def lambda_handler(event, context):
+    sqs = boto3.client('sqs')
+    s_queue_s = sqs.get_queue_url(QueueName='appointments')
+    queue_url = s_queue_s['QueueUrl']
+
+    # now getting response from sqs
+    response_from_sqs = sqs.receive_message(
+        QueueUrl=queue_url,
+        AttributeNames=[
+            'SentTimestamp'
+        ],
+        MaxNumberOfMessages=1,
+        MessageAttributeNames=[
+            'All'
+        ],
+        VisibilityTimeout=0,
+        WaitTimeSeconds=0
+    )
+    print(response_from_sqs)
+
+    if response_from_sqs:
+
+        # retrieving relevant info
+        patientId = response_from_sqs['Messages'][0]["MessageAttributes"]['patientId']["StringValue"]
+        doctorId = response_from_sqs['Messages'][0]["MessageAttributes"]['doctorId']["StringValue"]
+        time = response_from_sqs['Messages'][0]["MessageAttributes"]['Time']["StringValue"]
+        date = response_from_sqs['Messages'][0]["MessageAttributes"]['Date']["StringValue"]
+
+        dynamodb = boto3.resource('dynamodb')
+
+        # Define tables
+        doctor_table = dynamodb.Table('doctors')
+        patient_table = dynamodb.Table('patients')
+
+        # Query doctor information
+        doctor_response = doctor_table.get_item(
+            Key={
+                'doctorId': doctorId
+            }
+        )
+
+        doctor = doctor_response['Item']
+        doctor_first_name = doctor['firstName']
+        doctor_last_name = doctor['lastName']
+        doctor_location = doctor['location']
+        doctor_email = doctor['email']
+        doctor_specialties = doctor['specialties']
+        doctor_calendly_link = doctor['calendlyLink']
+
+        # Query patient information
+        patient_response = patient_table.get_item(
+            Key={
+                'patientId': patientId
+            }
+        )
+
+        patient = patient_response['Item']
+        patient_first_name = patient['firstName']
+        patient_last_name = patient['lastName']
+        patient_location = patient['location']
+        patient_email = patient['email']
+
+
+        # recommendBackMessage = []
+        # for n in Business_ID_list:
+        #     response_from_DB = table.query(
+        #         KeyConditionExpression=Key('id').eq(n)
+        #     )
+        #     recommend_restaurant = response_from_DB['Items'][0]["name"]
+        #     recommend_address = response_from_DB['Items'][0]["address"]
+        #     recommendBackMessage.append({
+        #         "name": recommend_restaurant,
+        #         "address": recommend_address
+        #     })
+        # Prepare email content
+        email_subject = "Appointment Confirmation"
+        email_body = f"Hello {patient_first_name} {patient_last_name},\n\nYou have an appointment with Dr. {doctor_first_name} {doctor_last_name} on {date} at {time}.\n\nDr. {doctor_first_name} {doctor_last_name} specializes in {doctor_specialties} and their office is located at {doctor_location}. You can schedule a meeting with them using the following link: {doctor_calendly_link}\n\nBest regards,\nYour Healthcare Team"
+
+        # Send email to patient
+        send_email(patient_email, email_subject, email_body)
+
+        # Prepare email content for doctor
+        doctor_email_subject = "New Appointment Notification"
+        doctor_email_body = f"Hello Dr. {doctor_first_name} {doctor_last_name},\n\nYou have a new appointment with {patient_first_name} {patient_last_name} on {date} at {time}.\n\nPatient Details:\nName: {patient_first_name} {patient_last_name}\nLocation: {patient_location}\nEmail: {patient_email}\n\nBest regards,\nYour Healthcare Team"
+
+        # Send email to doctor
+        send_email(doctor_email, doctor_email_subject, doctor_email_body)
+
+
+
+        # Delete queue info, fifo
+        sqs.delete_message(
+            QueueUrl=queue_url,
+            ReceiptHandle=response_from_sqs['Messages'][0]['ReceiptHandle']
+        )
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+            },
+            'body': json.dumps({'results': message_to_user})
+        }
+    else:
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+            },
+            'body': json.dumps("SQS queue is now empty")
+        }
+
+
+def query(input):
+    q = {'size': 20, 'query': {'multi_match': {'query': input}}}
+
+    client = OpenSearch(hosts=[{
+        'host': HOST,
+        'port': 443
+    }],
+        http_auth=get_awsauth(REGION, 'es'),
+        use_ssl=True,
+        verify_certs=True,
+        connection_class=RequestsHttpConnection)
+
+    res = client.search(index=INDEX, body=q)
+    hits = res['hits']['hits']
+    result = []
+    while len(result) != 3:
+        index = random.randint(0, 19)
+        RestaurantID = hits[index]['_source']['id']
+        if RestaurantID not in result:
+            result.append(RestaurantID)
+    return result
 
 
 def send_email(email, subject, body_text):
     SENDER = "wl2872@columbia.edu"
     RECIPIENT = email
     AWS_REGION = "us-east-1"
+    SUBJECT = subject
     BODY_TEXT = (body_text)
     CHARSET = "UTF-8"
     client = boto3.client('ses', region_name=AWS_REGION)
@@ -43,7 +192,7 @@ def send_email(email, subject, body_text):
                 },
                 'Subject': {
                     'Charset': CHARSET,
-                    'Data': subject,
+                    'Data': SUBJECT,
                 },
             },
             Source=SENDER,
@@ -57,125 +206,10 @@ def send_email(email, subject, body_text):
         print(response['MessageId'])
 
 
-def get_aws_auth(region, service):
-    credentials = boto3.Session().get_credentials()
-    awsauth = AWS4Auth(
-        credentials.access_key,
-        credentials.secret_key,
-        region,
-        service,
-        session_token=credentials.token
-    )
-    return awsauth
-
-
-# Initialize OpenSearch client
-opensearch = OpenSearch(
-    hosts=[{'host': opensearch_host, 'port': 443}],
-    http_auth=get_aws_auth(region, service),
-    use_ssl=True,
-    verify_certs=True,
-    connection_class=RequestsHttpConnection
-)
-
-# Get the personal token from environment variables
-calendly_personal_token = os.environ[
-    'eyJraWQiOiIxY2UxZTEzNjE3ZGNmNzY2YjNjZWJjY2Y4ZGM1YmFmYThhNjVlNjg0MDIzZjdjMzJiZTgzNDliMjM4MDEzNWI0IiwidHlwIjoiUEFUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJodHRwczovL2F1dGguY2FsZW5kbHkuY29tIiwiaWF0IjoxNjgwODA2ODY5LCJqdGkiOiIzY2VkOTdiZS1iZTFjLTQwMmEtOTQxMi1mZTk3OTg5NGIzMjUiLCJ1c2VyX3V1aWQiOiJhMWMwZmQ5OC1lMGVjLTQ3NmEtOTljOC04ODE4NWIyMzc0YTYifQ.6aUvcvyKcRJ8lVo_SuZ8BgMfpueVWe8YEXMd6Hy1ZqM7kHZ-YaRFSBGaaMIUjEXxvC_KNLMSQ7RPQ4jucWKJ_w']
-
-
-def lambda_handler(event, context):
-    # Get message from SQS
-    message = json.loads(event['Records'][0]['body'])
-
-    # Extract appointment details from the message
-    doctor_id = message['DoctorId']
-    patient_id = message['PatientId']
-    appointment_date = message['Date']
-    appointment_time = message['Time']
-
-    # Retrieve doctor and patient information from DynamoDB
-    doctor_table = dynamodb.Table('doctors')
-    patient_table = dynamodb.Table('patients')
-
-    doctor_response = doctor_table.get_item(Key={'doctor_id': doctor_id})
-    patient_response = patient_table.get_item(Key={'patient_id': patient_id})
-
-    doctor = doctor_response['Item']
-    patient = patient_response['Item']
-
-    # Extract relevant information from the database
-    user_email = patient['email']
-    location = doctor['location']
-    specialty = doctor['specialty']
-
-    # Combine date and time for Calendly appointment
-    appointment_datetime = f'{appointment_date}T{appointment_time}'
-
-    # Integrate with Calendly API
-    headers = {'Authorization': f'Bearer {calendly_personal_token}'}
-    calendly_url = f'https://api.calendly.com/scheduled_events/{doctor_id}'
-    appointment_payload = {
-        'start_time': appointment_datetime,
-        'invitees': [{'email': user_email}]
-    }
-    response = requests.post(calendly_url, json=appointment_payload, headers=headers)
-    if response.status_code != 201:
-        return {
-            'statusCode': response.status_code,
-            'body': response.text
-        }
-
-    # Create unique appointment ID
-    appointment_id = str(uuid.uuid4())
-
-    # Update Doctor and Patient DB with appointment information
-    doctor_table.update_item(
-        Key={'doctor_id': doctor_id},
-        UpdateExpression='SET appointments = list_append(if_not_exists(appointments, :empty_list), :appointment)',
-        ExpressionAttributeValues={':appointment': [appointment_id], ':empty_list': []}
-    )
-
-    patient_table.update_item(
-        Key={'patient_id': patient_id},
-        UpdateExpression='SET appointments = list_append(if_not_exists(appointments, :empty_list), :appointment)',
-        ExpressionAttributeValues={':appointment': [appointment_id], ':empty_list': []}
-    )
-
-    # Index appointment in OpenSearch
-    appointment_info = {
-        'appointment_id': appointment_id,
-        'doctor_id': doctor_id,
-        'patient_id': patient_id,
-        'date': appointment_date,
-        'time': appointment_time,
-        'location': location,
-        'specialty': specialty,
-        'doctor_name': f"{doctor['first_name']} {doctor['last_name']}",
-        'patient_name': f"{patient['first_name']} {patient['last_name']}",
-        'user_email': user_email
-    }
-
-    opensearch.index(index='appointments', doc_type='_doc', id=appointment_id, body=appointment_info)
-
-    # Send appointment confirmed email to user email (SES)
-    subject_patient = 'Appointment Confirmation'
-    body_patient = f'Dear {patient["first_name"]} {patient["last_name"]},\n\nYour appointment with Doctor {doctor["first_name"]} {doctor["last_name"]} ({specialty}) has been confirmed for {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
-    send_email(user_email, subject_patient, body_patient)
-
-    # Send appointment notification to the doctor
-    subject_doctor = 'New Appointment Notification'
-    body_doctor = f'Dear Doctor {doctor["first_name"]} {doctor["last_name"]},\n\nYou have a new appointment with {patient["first_name"]} {patient["last_name"]} ({user_email}) on {appointment_date} at {appointment_time} at {location}.\n\nAppointment ID: {appointment_id}\n\nThank you!'
-    send_email(doctor['email'], subject_doctor, body_doctor)
-
-    return {
-        'statusCode': 200,
-        'body': 'Appointment booked and confirmation email sent.'
-    }
-
-    # TODO - integrate with Calendly API
-
-    # TODO - create unique appointment ID
-
-    # TODO - post to both Doc and Patient DB and Opensearch appointments
-
-    # TODO - send appointment confirmed email to user email (SES)
+def get_awsauth(region, service):
+    cred = boto3.Session().get_credentials()
+    return AWS4Auth(cred.access_key,
+                    cred.secret_key,
+                    region,
+                    service,
+                    session_token=cred.token)

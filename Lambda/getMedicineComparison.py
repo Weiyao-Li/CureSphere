@@ -8,7 +8,7 @@ HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.co
 INDEX = 'appointments'
 
 # DynamoDB table name
-dynamodb_table = 'MedicineDataDB'
+dynamodb_table = 'medicinedata'
 
 # Elasticsearch configuration
 es = Elasticsearch(
@@ -32,7 +32,7 @@ def get_latest_medicine_name(appointment_id):
         ],
         "query": {
             "term": {
-                "appointmentId": appointment_id
+                "a_id": appointment_id
             }
         }
     }
@@ -77,6 +77,7 @@ def get_medicine_comparison(medicine_name):
 def lambda_handler(event, context):
     appointment_id = event['appointmentId']
     print('here is the app_id you get: ', appointment_id)
+
     medicine_name = get_latest_medicine_name(appointment_id)
     print('here is the medicine name you get: ', medicine_name)
 
@@ -113,3 +114,4 @@ def lambda_handler(event, context):
 event include incoming appointmentId
 use this unique id to query es.
 '''
+

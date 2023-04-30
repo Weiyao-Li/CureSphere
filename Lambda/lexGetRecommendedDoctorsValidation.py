@@ -5,11 +5,13 @@ import time
 import os
 import logging
 import re
-# maybe import math and re, To-do later
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+# Configure the DynamoDB client
+dynamodb = boto3.resource('dynamodb')
+symptom_specialty_table = dynamodb.Table('SymptomSpecialty')
 
 # --- Helpers that build all of the responses ---
 
@@ -129,6 +131,16 @@ def validationProcess(zipcode):
                                    '',
                                    'SpellbyWord',
                                    '')
+def get_specialty_from_symptoms(symptom_list):
+    specialties = set()
+    for symptom in symptom_list:
+        response = symptom_specialty_table.query(
+            KeyConditionExpression = Key('symptom').eq(symptom)
+        )
+        for item in response['Items']:
+            specialties.add(item['specialty'])
+    return list(specialties)
+
 
 def GetRecommendedDoctors(intent_request):
     state = intent_request['sessionState']
@@ -169,6 +181,14 @@ def GetRecommendedDoctors(intent_request):
         #     patientId,
         #     doctorId
         # )
+        symptoms = [symptom1]
+        if symptom2:
+            symptoms.append(symptom2)
+        if symptom3:
+            symptoms.append(symptom3)
+
+        returned_specialties = get_specialty_from_symptoms(symptoms)
+
         return close(intent_request,
                      session_attributes,
                      'Fulfilled',

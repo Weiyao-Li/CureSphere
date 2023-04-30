@@ -417,6 +417,58 @@ paths:
             properties:
               error:
                 type: string
+
+  /bookAppointment:
+    get:
+      description: book appointment of doc and patient
+      operationId: bookAppointment
+      parameters:
+        - name: patientId
+          in: header
+          description: the unique patientId
+          required: true
+          type: string
+
+        - name: doctorId
+          in: header
+          description: the unique doctorId
+          required: true
+          type: string
+
+        - name: Time
+          in: header
+          description: the timestamp in time
+          required: true
+          type: string
+
+        - name: Date
+          in: header
+          description: the timestamp in date
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully book appointment of doc and patient
+          schema:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+        '400':
+          description: Error in implementing book appointment of doc and patient
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
 definitions:
     UnstructuredMessage:
       type: object

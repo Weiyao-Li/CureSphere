@@ -2,6 +2,8 @@ import json
 import os
 import random
 import boto3
+import time
+import uuid
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from boto3.dynamodb.conditions import Key, Attr
 from requests_aws4auth import AWS4Auth
@@ -10,7 +12,21 @@ from botocore.exceptions import ClientError
 
 REGION = 'us-east-1'
 HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
-INDEX = 'appointments'
+INDEX = 'appointment'
+
+
+# Add this function to post appointment details to Elasticsearch
+def post_to_elastic_search(appointment_details):
+    awsauth = get_awsauth(REGION, 'es')
+    os_client = OpenSearch(
+        hosts=[{'host': HOST, 'port': 443}],
+        http_auth=awsauth,
+        use_ssl=True,
+        verify_certs=True,
+        connection_class=RequestsHttpConnection
+    )
+
+    os_client.index(index=INDEX, doc_type='_doc', body=appointment_details)
 
 
 def lambda_handler(event, context):
@@ -19,6 +35,10 @@ def lambda_handler(event, context):
     doctorId = event['doctorId']
     time = event['Time']
     date = event['Date']
+
+    # Generate unique appointment ID and timestamp
+    appointment_id = str(uuid.uuid4())
+    timestamp = int(time.time())
 
     dynamodb = boto3.resource('dynamodb')
 
@@ -67,6 +87,19 @@ def lambda_handler(event, context):
 
     # Send email to doctor
     send_email(doctor_email, doctor_email_subject, doctor_email_body)
+
+    # Prepare appointment details dictionary
+    appointment_details = {
+        'appointmentId': appointment_id,
+        'timestamp': timestamp,
+        'doctorId': doctorId,
+        'patientId': patientId,
+        'date': date,
+        'time': time
+    }
+
+    # Post appointment details to Elasticsearch
+    post_to_elastic_search(appointment_details)
 
     return {
         'statusCode': 200,
@@ -126,3 +159,6 @@ def get_awsauth(region, service):
                     region,
                     service,
                     session_token=cred.token)
+
+# 1. email to user
+# 2. es: send date, time, patientID, docID, timestamp(time), unique appointment id

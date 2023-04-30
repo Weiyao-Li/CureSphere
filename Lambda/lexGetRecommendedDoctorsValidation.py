@@ -5,13 +5,13 @@ import time
 import os
 import logging
 import re
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 # Configure the DynamoDB client
 dynamodb = boto3.resource('dynamodb')
-symptom_specialty_table = dynamodb.Table('SymptomSpecialty')
 
 
 # --- Helpers that build all of the responses ---
@@ -138,14 +138,53 @@ def validationProcess(zipcode):
 
 
 def get_specialty_from_symptoms(symptom_list):
+    symptom_specialty_table = dynamodb.Table('SymptomSpecialty')
+
     specialties = set()
     for symptom in symptom_list:
-        response = symptom_specialty_table.query(
-            KeyConditionExpression=Key('symptom').eq(symptom)
-        )
-        for item in response['Items']:
-            specialties.add(item['specialty'])
+        try:
+            response = symptom_specialty_table.get_item(
+                Key=symptom
+            )
+            for item in response['Items']:
+                specialties.add(item['specialty'])
+        except ClientError as e:
+            print('Error', e.response['Error']['Message'])
     return list(specialties)
+
+
+def get_doctor_from_specialty(specialties, patient_zipcode, num_results=3):
+    doctor_table = dynamodb.Table('doctors')
+    returned_docs = []
+
+    for specialty in specialties:
+        try:
+            response = doctor_table.get_item(
+                Key=specialty
+            )
+            doctors = response['Items']
+            patient_doctor_distance = [
+                distance_from_zipcode(patient_zipcode, d['zipcode']) for d in doctors
+            ]
+            sorted_doctors = sorted(zip(doctors, patient_doctor_distance), key=lambda x: x[1])
+            top_k_sorted_doctors = [doctor for doctor, distance in sorted_doctors[:num_results]]
+
+            for d in top_k_sorted_doctors:
+                doctor_data = {
+                    'doctor_id': d['doctor_id'],
+                    'firstName': d['firstName'],
+                    'lastName': d['lastName'],
+                    'email': d['email'],
+                    'clinic_zip_code': d['clinic_zip_code']
+                }
+                returned_docs.append(doctor_data)
+        except ClientError as e:
+            print('Error', e.response['Error']['Message'])
+    return returned_docs
+
+
+def distance_from_zipcode(zip1, zip2):
+    return abs(int(zip1) - int(zip2))
 
 
 def GetRecommendedDoctors(intent_request):
@@ -181,12 +220,6 @@ def GetRecommendedDoctors(intent_request):
     if not zipcode and not symptom1:
         return delegate(intent_request, get_slots(intent_request))
     else:
-        # send_message_to_SQS(
-        #     Date,
-        #     Time,
-        #     patientId,
-        #     doctorId
-        # )
         symptoms = [symptom1]
         if symptom2:
             symptoms.append(symptom2)
@@ -194,12 +227,22 @@ def GetRecommendedDoctors(intent_request):
             symptoms.append(symptom3)
 
         returned_specialties = get_specialty_from_symptoms(symptoms)
+        print("[DEBUG] Returned specialties are: ", returned_specialties[:3])
 
-        return close(intent_request,
-                     session_attributes,
-                     'Fulfilled',
-                     {'contentType': 'PlainText',
-                      'content': 'Thanks. We will send you email shortly'})
+        top_k_doctors = get_doctor_from_specialty(specialties=returned_specialties, patient_zipcode=zipcode,
+                                                  num_results=5)
+        print(f"[DEBUG] Top {len(top_k_doctors)} are: {top_k_doctors}")
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*'
+            },
+            'body': json.dumps({'results': top_k_doctors})
+        }
 
 
 # --- Intents ---
@@ -217,34 +260,6 @@ def dispatch(intent_request):
         print(result)
         return result
     print("Error!", intent_name)
-
-
-# def send_message_to_SQS(Date, Time, patientId, doctorId):
-#     sqs = boto3.client('sqs')
-#
-#     response = sqs.send_message(
-#         QueueUrl="https://sqs.us-east-1.amazonaws.com/227639073722/bookAppointmentSQS",
-#         MessageAttributes={
-#             'Date': {
-#                 'DataType': 'String',
-#                 'StringValue': Date
-#             },
-#             'Time': {
-#                 'DataType': 'String',
-#                 'StringValue': Time
-#             },
-#             'patientId': {
-#                 'DataType': 'String',
-#                 'StringValue': patientId
-#             },
-#             'doctorId': {
-#                 'DataType': 'String',
-#                 'StringValue': doctorId
-#             }
-#         },
-#
-#         MessageBody='Information about user inputs of Dining Chatbot.',
-#     )
 
 
 # --- Main handler ---

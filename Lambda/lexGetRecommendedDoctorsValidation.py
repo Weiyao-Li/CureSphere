@@ -13,6 +13,7 @@ logger.setLevel(logging.DEBUG)
 dynamodb = boto3.resource('dynamodb')
 symptom_specialty_table = dynamodb.Table('SymptomSpecialty')
 
+
 # --- Helpers that build all of the responses ---
 
 def get_slots(intent_request):
@@ -110,17 +111,20 @@ def delegate(intent_request, slots):
             "requestAttributes": intent_request['requestAttributes'] if 'requestAttributes' in intent_request else None
         }}
 
+
 def current_time():
     now = datetime.datetime.now()
     hour = str(now.hour).zfill(2)
     minute = str(now.minute).zfill(2)
     return f"{hour}:{minute}"
 
+
 # patientId, date, time, doctorId
 def validationProcess(zipcode):
     if zipcode:
         print('zipcode is: ', zipcode)
-        pattern = r"^\d{5}(-\d{4})?$"  # Zip code pattern: five digits, optionally followed by a dash and four more digits
+        pattern = r"^\d{5}(-\d{4})?$"  # Zip code pattern: five digits, optionally followed by a dash and four more
+        # digits
         if not bool(re.match(pattern, zipcode)):
             return build_validation_result(False,
                                            'zipcode',
@@ -131,11 +135,13 @@ def validationProcess(zipcode):
                                    '',
                                    'SpellbyWord',
                                    '')
+
+
 def get_specialty_from_symptoms(symptom_list):
     specialties = set()
     for symptom in symptom_list:
         response = symptom_specialty_table.query(
-            KeyConditionExpression = Key('symptom').eq(symptom)
+            KeyConditionExpression=Key('symptom').eq(symptom)
         )
         for item in response['Items']:
             specialties.add(item['specialty'])

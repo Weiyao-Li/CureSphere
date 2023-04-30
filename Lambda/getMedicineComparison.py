@@ -23,13 +23,18 @@ dynamodb = boto3.resource('dynamodb', region_name=REGION)
 table = dynamodb.Table(dynamodb_table)
 
 
-def get_latest_medicine_name():
-    # Query ElasticSearch for the latest medicine entry
+def get_latest_medicine_name(appointment_id):
+    # Query ElasticSearch for the latest medicine entry with given appointmentId
     query = {
         "size": 1,
         "sort": [
             {"timestamp": {"order": "desc"}}
-        ]
+        ],
+        "query": {
+            "term": {
+                "appointmentId": appointment_id
+            }
+        }
     }
 
     response = es.search(index=INDEX, body=query)
@@ -70,7 +75,10 @@ def get_medicine_comparison(medicine_name):
 
 
 def lambda_handler(event, context):
-    medicine_name = get_latest_medicine_name()
+    appointment_id = event['appointmentId']
+    print('here is the app_id you get: ', appointment_id)
+    medicine_name = get_latest_medicine_name(appointment_id)
+    print('here is the medicine name you get: ', medicine_name)
 
     if medicine_name:
         comparison_result = get_medicine_comparison(medicine_name)
@@ -87,13 +95,21 @@ def lambda_handler(event, context):
     else:
         return {
             'statusCode': 404,
-            'body': json.dumps({"message": "No latest medicine name found."})
+            'body': json.dumps({"message": "No latest medicine name found for the given appointmentId."})
         }
+
 
 # workflow:
 # the doctor as the user will input the name of the prescription into the elastic search.
 # And please assume that there is a MedicineDataDB that has seller column, medicine name column, price column, and zip code.
-# Here is the logic: the patient will click a refresh button and get the most updated medicine name that the doctor inputted in the elastic search.
+# Here is the logic: the patient will click a refresh button and input an unique appointmentId and get the most updated medicine name that the doctor inputted in the elastic search.
+# Specifically, the unique appointmentId is used to lock in that corresponding patient.
 # Then, we will use that medicine name to go to MedicineDataDB to do the price comparison by selecting the lowest 3 products with the same medicine name as the name of the prescription in the db.
 # What would return to the patient would be the seller name, medicine name, price and zip code,
 # so that the user would know the existence of a lower-price medicine product and where it is and who is selling it.
+
+# change
+'''
+event include incoming appointmentId
+use this unique id to query es.
+'''

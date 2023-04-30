@@ -155,7 +155,7 @@ paths:
           in: header
           description: The last name of the patient
           required: true
-          type: string   
+          type: string
         - name: age
           in: header
           description: The age of the patient
@@ -197,7 +197,7 @@ paths:
               firstName:
                 type: string
               lastName:
-                type: string  
+                type: string
               age:
                 type: integer
               gender:
@@ -209,7 +209,7 @@ paths:
               zip_code:
                 type: string
               email:
-                type: string  
+                type: string
         '400':
           description: Error in creating patient record
           schema:
@@ -239,7 +239,7 @@ paths:
           in: header
           description: The last name of the doctor
           required: true
-          type: string   
+          type: string
         - name: department
           in: header
           description: The department of the doctor
@@ -295,7 +295,7 @@ paths:
               firstName:
                 type: string
               lastName:
-                type: string  
+                type: string
               department:
                 type: string
               specialty:
@@ -315,7 +315,7 @@ paths:
               zip_code:
                 type: string
               email:
-                type: string   
+                type: string
         '400':
           description: Error in registering doctor
           schema:
@@ -384,6 +384,39 @@ paths:
                 description: Link to the patient's appointment
         404:
           description: Patient ID not found
+
+  /getMedicineComparison:
+    get:
+      description: refresh and get the most updated medicine name that the doctor inputted and then predefined some values in  to return the lowest 5 products with the same name
+      operationId: getMedicineComparison
+      parameters:
+        - name: appointmentId
+          in: header
+          description: the unique appointmentId
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully implemented medicine comparision
+          schema:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+        '400':
+          description: Error in implementing medicine comparision
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
 definitions:
     UnstructuredMessage:
       type: object
@@ -440,4 +473,4 @@ definitions:
       properties:
         Text:
           type: string
-          
+

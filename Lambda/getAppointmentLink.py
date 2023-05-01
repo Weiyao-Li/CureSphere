@@ -10,24 +10,97 @@ INDEX = 'appointment'
 
 def lambda_handler(event, context):
     print('Received event: ' + json.dumps(event))
+    # -> input : appointment ID, past or current
+    # -> output : past/current record (entire one, not just the link)
     
-    # Ideally appointment ID is quried from patients or doctors DB based on input event - 
+    # appointment ID is obtained from DB based on input event - 
     # 1) doctor/patient role, 2) email address (which is doctor_id/patient_id, PK of table)
-    results = query('a_id3') #appointment id
-    print("results : ", results)
-    #results -> [{'a_id': 'a_id1', 'feedback': 'fb1', 'medicine': 'm1', 'a_link': 'a_link1'}]
-    a_link = results[0]['a_link']
-    print("appointment_link", results[0]['a_link'])
-    return {
+    
+    role = event["role"]
+    email = event["email"]
+    print(role, email)
+    #role = "doctor"
+    #email = "hameed.arshad@gmail.com"
+
+
+    #get appointment_id from doctorDB or patientDB using email(key)
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(role+'s') #db name : doctors, patients
+    filter = Key(role+"_id").eq(email)
+    result = table.scan(FilterExpression=filter)
+    print("result:", result)
+    
+    appointment_id = result['Items'][0]['appointment_id']
+    print("appointment_id from dynamodb:", appointment_id)
+    
+    #appointment_id = event['appointment_id']
+    appointment_type = event['is_current'] #"curr" for current appointment, "past" for past appointments
+    
+    result_current = []
+    results_past = []
+    
+    most_recent_timestamp = None
+    results = query(appointment_id)
+    for result in results:
+        if most_recent_timestamp is None or most_recent_timestamp < result['timestamp']:
+            result_current = [result]
+            most_recent_timestamp = result['timestamp']
+            
+    for result in results:
+        if result['timestamp'] != most_recent_timestamp:
+            results_past.append(result)
+            
+            
+    if appointment_type == "curr":
+        return {
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Headers': 'Content-Type',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': '*',
-        },
-        'body': json.dumps({'appointment_link': a_link})
-    }
+            },
+        'body': json.dumps({'current_appointment': result_current})
+        }
+    elif appointment_type == "past":
+        return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+            },
+        'body': json.dumps({'past_appointments': results_past})
+        }
+    else:
+        return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+            },
+        'body': json.dumps({'wrong input for appointment type'})
+        }
+        
+    
+    # #results = query('a_id3') #appointment id #for testing
+    # print("results : ", results)
+    # #results -> [{'a_id': 'a_id1', 'feedback': 'fb1', 'medicine': 'm1', 'a_link': 'a_link1'}]
+    # a_link = results[0]['a_link']
+    # print("appointment_link", results[0]['a_link'])
+    # return {
+    #     'statusCode': 200,
+    #     'headers': {
+    #         'Content-Type': 'application/json',
+    #         'Access-Control-Allow-Headers': 'Content-Type',
+    #         'Access-Control-Allow-Origin': '*',
+    #         'Access-Control-Allow-Methods': '*',
+    #     },
+    #     'body': json.dumps({'appointment_link': a_link})
+    # }
 
 def query(term):
     q = {'size': 5, 'query': {'multi_match': {'query': term}}}

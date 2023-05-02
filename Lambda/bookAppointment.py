@@ -31,10 +31,10 @@ def post_to_elastic_search(appointment_details):
 
 def lambda_handler(event, context):
     # Extracting relevant info from the event
-    patientId = event['patientId']
-    doctorId = event['doctorId']
-    time = event['Time']
-    date = event['Date']
+    patientId = event['headers']['patientId']
+    doctorId = event['headers']['doctorId']
+    time = event['headers']['Time']
+    date = event['headers']['Date']
 
     # Generate unique appointment ID and timestamp
     appointment_id = str(uuid.uuid4())

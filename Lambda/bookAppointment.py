@@ -95,7 +95,9 @@ def lambda_handler(event, context):
         'doctorId': doctorId,
         'patientId': patientId,
         'date': date,
-        'time': time
+        'time': time,
+        'feedback' : "",
+        'medicine' : ""
     }
 
     # Post appointment details to Elasticsearch

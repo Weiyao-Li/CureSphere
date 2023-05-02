@@ -15,11 +15,14 @@ def lambda_handler(event, context):
     feedback = event["feedback"]
     medicine = event["medicine"]
     a_id = event['a_id']
-    # a_id = "a_id3"
+
+    #for testing -> works well!
+    # feedback = "updated5/1"
+    # medicine = "updated5/1"
+    # a_id = "NrAT1IcBAh0ClifDPt_a"
     
-    #feed_back
     # {"index": {"_index": "appointment", "_id": 1}}
-    # {"a_id": "a_id1", "feedback": "fb1", "medicine":"m1", "a_link": "a_link1", "doctor_id": , "patient_id": }
+    # {"a_id": "a_id1", "feedback": "fb1", "medicine":"m1", "a_link": "a_link1", "doctor_id": "d1", "patient_id": "p1", "timestamp": 124.344}
     
     client = OpenSearch(hosts=[{
         'host': HOST,
@@ -34,27 +37,32 @@ def lambda_handler(event, context):
     # mapping = client.indices.get_mapping(index=INDEX)
     # print(mapping)
     
-    results = query(a_id)
-    a_link = results[0]['a_link']    
-    doctor_id = results[0]['doctor_id']    
-    patient_id = results[0]['patient_id']    
+    results = client.get(index = INDEX, id = a_id)
+    print("before update results", results)
+    a_link = results['_source']['a_link']    
+    doctor_id = results['_source']['doctor_id']    
+    patient_id = results['_source']['patient_id']   
+    timestamp = results['_source']['timestamp']   
     
-    data ={"a_id": a_id, "feedback": feedback, "medicine": medicine, "a_link": a_link, "doctor_id": doctor_id , "patient_id":patient_id, "timestamp":time.time() }
-            
-    bulk_request = ""
-    action = {"index": {"_index": INDEX, "_id": a_id}}
-    bulk_request += json.dumps(action) + "\n" + json.dumps(data) + "\n"
-        
-    response = client.bulk(body=bulk_request)
-    print(response)
-    # #post("aaa", 'a_id_test1')
+    #1 save the record
+    data ={"a_id": a_id, "feedback": feedback, "medicine": medicine, "a_link": a_link, "doctor_id": doctor_id , "patient_id":patient_id, "timestamp":timestamp}
+    #2 delete the current record
+    res = client.delete(index=INDEX, id=a_id)
+    #3 update the record (create new one)
+    res = client.index(index=INDEX, id=a_id, body=data)
+    print(res)
     
-    results = query('a_id3') #appointment id #for testing
+    # bulk_request = ""
+    # action = {"index": {"_index": INDEX, "_id": "tmp_id"}}
+    # bulk_request += json.dumps(action) + "\n" + json.dumps(data) + "\n"
+    # response = client.bulk(body=bulk_request)
     
-    print("results : ", results)
-    #results -> [{'a_id': 'a_id1', 'feedback': 'fb1', 'medicine': 'm1', 'a_link': 'a_link1'}]
-    a_link = results[0]['a_link']
-    print("appointment_link", results[0]['a_link'])
+    # # response = client.update(index=INDEX, id = a_id, body = {'_source':data}) -> not working
+    
+    
+    results = client.get(index = INDEX, id = a_id)
+    print("after update results : ", results)
+    
     return {
         'statusCode': 200,
         'headers': {
@@ -63,7 +71,7 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': '*',
         },
-        'body': json.dumps({'appointment_link': a_link})
+        'body': json.dumps({'doctor_input_update': res})
     }
     
 def post(document, key):
@@ -94,7 +102,7 @@ def post(document, key):
     print(es_client.get(index=INDEX, id=key))
 
 def query(term):
-    q = {'size': 5, 'query': {'multi_match': {'query': term}}}
+    q = {'size': 30, 'query': {'multi_match': {'query': term}}}
     client = OpenSearch(hosts=[{
         'host': HOST,
         'port': 443

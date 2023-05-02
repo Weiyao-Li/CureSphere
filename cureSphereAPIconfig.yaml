@@ -330,23 +330,41 @@ paths:
             properties:
               error:
                 type: string
-  /feedback/latest:
+  /getAppointment:
     get:
-      summary: Retrieve the latest feedback by the doctor in ElasticSearch
-      description: Retrieves the latest feedback by the doctor in ElasticSearch using a Lambda function.
-      operationId: getLatestFeedback
+      description: Retrieve the whole records of appointments
+      operationId: getAppointment
       produces:
         - application/json
+      parameters:
+        - name: email
+          in: header
+          description: user email (user id)
+          required: true
+          type: string
+
+        - name: role
+          in: header
+          description: doctor or patient
+          required: true
+          type: string
+
+        - name: appointment_type
+          in: header
+          description: past or current
+          required: true
+          type: string
+
       responses:
         '200':
-          description: Latest feedback retrieved successfully
+          description: appointments retrieved successfully
           schema:
             type: object
             properties:
               feedback:
                 type: string
         '404':
-          description: No feedback name found
+          description: No appointments found
           schema:
             type: object
             properties:
@@ -418,8 +436,53 @@ paths:
               error:
                 type: string
 
+  /doctorInput:
+    post:
+      description: submitting medicine, feedback
+      operationId: doctorInput
+      parameters:
+        - name: a_id
+          in: header
+          description: the unique appointment Id
+          required: true
+          type: string
+
+        - name: feedback
+          in: header
+          description: feedback
+          required: true
+          type: string
+
+        - name: medicine
+          in: header
+          description: medicine
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully submitted medicine and feedback
+          schema:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+        '400':
+          description: Error in submitting book medicine and feedback
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
   /bookAppointment:
-    get:
+    post:
       description: book appointment of doc and patient
       operationId: bookAppointment
       parameters:
@@ -525,4 +588,3 @@ definitions:
       properties:
         Text:
           type: string
-

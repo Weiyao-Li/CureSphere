@@ -27,9 +27,6 @@ def get_latest_medicine_name(appointment_id):
     # Query ElasticSearch for the latest medicine entry with given appointmentId
     query = {
         "size": 1,
-        "sort": [
-            {"timestamp": {"order": "desc"}}
-        ],
         "query": {
             "term": {
                 "a_id": appointment_id

@@ -9,6 +9,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from requests_aws4auth import AWS4Auth
 from botocore.vendored import requests
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
 
 REGION = 'us-east-1'
 HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
@@ -26,15 +27,21 @@ def post_to_elastic_search(appointment_details):
         connection_class=RequestsHttpConnection
     )
 
-    os_client.index(index=INDEX, doc_type='_doc', body=appointment_details)
+    os_client.index(index=INDEX, body=appointment_details)
 
 
 def lambda_handler(event, context):
+    print(event)
     # Extracting relevant info from the event
     patientId = event['headers']['patientId']
     doctorId = event['headers']['doctorId']
-    time = event['headers']['Time']
+    timeInput = event['headers']['Time']
     date = event['headers']['Date']
+
+    timeInput = str(timeInput)
+    date = str(date)
+    doctorId = str(doctorId)
+    patientId = str(patientId)
 
     # Generate unique appointment ID and timestamp
     appointment_id = str(uuid.uuid4())
@@ -46,44 +53,43 @@ def lambda_handler(event, context):
     doctor_table = dynamodb.Table('doctors')
     patient_table = dynamodb.Table('patients')
 
-    # Query doctor information
-    doctor_response = doctor_table.get_item(
-        Key={
-            'doctorId': doctorId
-        }
+    # Query doctor information using the query method
+    doctor_response = doctor_table.query(
+        KeyConditionExpression=Key('doctor_id').eq(doctorId)
     )
 
-    doctor = doctor_response['Item']
+    print("here is", doctor_response)
+
+    doctor = doctor_response['Items'][0]
     doctor_first_name = doctor['firstName']
     doctor_last_name = doctor['lastName']
-    doctor_location = doctor['location']
+    doctor_location = doctor['city']
     doctor_email = doctor['email']
     doctor_specialties = doctor['specialties']
-    doctor_calendly_link = doctor['calendlyLink']
 
-    # Query patient information
-    patient_response = patient_table.get_item(
-        Key={
-            'patientId': patientId
-        }
+    # Query patient information using the query method
+    patient_response = patient_table.query(
+        KeyConditionExpression=Key('patient_id').eq(patientId)
     )
 
-    patient = patient_response['Item']
+    print("here is", patient_response)
+
+    patient = patient_response['Items'][0]
     patient_first_name = patient['firstName']
     patient_last_name = patient['lastName']
-    patient_location = patient['location']
+    patient_location = patient['city']
     patient_email = patient['email']
 
     # Prepare email content
     email_subject = "Appointment Confirmation"
-    email_body = f"Hello {patient_first_name} {patient_last_name},\n\nYou have an appointment with Dr. {doctor_first_name} {doctor_last_name} on {date} at {time}.\n\nDr. {doctor_first_name} {doctor_last_name} specializes in {doctor_specialties} and their office is located at {doctor_location}. You can schedule a meeting with them using the following link: {doctor_calendly_link}\n\nBest regards,\nYour Healthcare Team"
+    email_body = f"Hello {patient_first_name} {patient_last_name},\n\nYou have an appointment with Dr. {doctor_first_name} {doctor_last_name} on {date} at {timeInput}.\n\nDr. {doctor_first_name} {doctor_last_name} specializes in {doctor_specialties} and their office is located at {doctor_location}. You can schedule a meeting with them using the following link: calendly link\n\nBest regards,\nYour Healthcare Team"
 
     # Send email to patient
     send_email(patient_email, email_subject, email_body)
 
     # Prepare email content for doctor
     doctor_email_subject = "New Appointment Notification"
-    doctor_email_body = f"Hello Dr. {doctor_first_name} {doctor_last_name},\n\nYou have a new appointment with {patient_first_name} {patient_last_name} on {date} at {time}.\n\nPatient Details:\nName: {patient_first_name} {patient_last_name}\nLocation: {patient_location}\nEmail: {patient_email}\n\nBest regards,\nYour Healthcare Team"
+    doctor_email_body = f"Hello Dr. {doctor_first_name} {doctor_last_name},\n\nYou have a new appointment with {patient_first_name} {patient_last_name} on {date} at {timeInput}.\n\nPatient Details:\nName: {patient_first_name} {patient_last_name}\nLocation: {patient_location}\nEmail: {patient_email}\n\nBest regards,\nYour Healthcare Team"
 
     # Send email to doctor
     send_email(doctor_email, doctor_email_subject, doctor_email_body)
@@ -95,9 +101,9 @@ def lambda_handler(event, context):
         'doctorId': doctorId,
         'patientId': patientId,
         'date': date,
-        'time': time,
-        'feedback' : "",
-        'medicine' : ""
+        'time': timeInput,
+        'feedback': "",
+        'medicine': ""
     }
 
     # Post appointment details to Elasticsearch

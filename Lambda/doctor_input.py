@@ -12,9 +12,10 @@ INDEX = 'appointment'
 def lambda_handler(event, context):
     print('Received event: ' + json.dumps(event))
     
-    feedback = event["feedback"]
-    medicine = event["medicine"]
-    a_id = event['a_id']
+    #3 input : a_id, feedback, medicine (all string)
+    feedback = event['headers']["feedback"]
+    medicine = event['headers']["medicine"]
+    a_id = event['headers']['a_id']
 
     #for testing -> works well!
     # feedback = "updated5/1"
@@ -24,6 +25,9 @@ def lambda_handler(event, context):
     # {"index": {"_index": "appointment", "_id": 1}}
     # {"a_id": "a_id1", "feedback": "fb1", "medicine":"m1", "a_link": "a_link1", "doctor_id": "d1", "patient_id": "p1", "timestamp": 124.344}
     
+    # updated
+    # {'appointmentId': appointment_id, 'doctorId': doctorId, 'patientId': patientId, 'date': date, 'time': time, 'timestamp':timestamp}
+
     client = OpenSearch(hosts=[{
         'host': HOST,
         'port': 443
@@ -37,19 +41,33 @@ def lambda_handler(event, context):
     # mapping = client.indices.get_mapping(index=INDEX)
     # print(mapping)
     
-    results = client.get(index = INDEX, id = a_id)
-    print("before update results", results)
-    a_link = results['_source']['a_link']    
-    doctor_id = results['_source']['doctor_id']    
-    patient_id = results['_source']['patient_id']   
-    timestamp = results['_source']['timestamp']   
+    results = query(a_id)
+    print("before update results", results[0])
+    appointmentId = results[0]['appointmentId'] #should be same with a_id   
+    doctorId = results[0]['doctorId']    
+    patientId = results[0]['patientId']   
+    date = results[0]['date']  
+    time = results[0]['time']
+    timestamp = results[0]['timestamp']
+    
+    #results = client.get(index = INDEX, id = a_id)
+    # a_link = results['_source']['a_link']    
+    # doctor_id = results['_source']['doctor_id']    
+    # patient_id = results['_source']['patient_id']   
+    # timestamp = results['_source']['timestamp']   
     
     #1 save the record
-    data ={"a_id": a_id, "feedback": feedback, "medicine": medicine, "a_link": a_link, "doctor_id": doctor_id , "patient_id":patient_id, "timestamp":timestamp}
+    data = {'appointmentId': appointment_id, 'doctorId': doctorId, 'patientId': patientId, 'date': date, 'time': time, "feedback": feedback, "medicine": medicine, 'timestamp':timestamp}
+    #data ={"a_id": a_id, "feedback": feedback, "medicine": medicine, "a_link": a_link, "doctor_id": doctor_id , "patient_id":patient_id, "timestamp":timestamp}
+    
     #2 delete the current record
-    res = client.delete(index=INDEX, id=a_id)
+    #TODO testing: get _id of the result
+    r_id = query_id(a_id)
+    r_id = r_id[0]
+    print(r_id)
+    res = client.delete(index=INDEX, id=r_id)
     #3 update the record (create new one)
-    res = client.index(index=INDEX, id=a_id, body=data)
+    res = client.index(index=INDEX, id=r_id, body=data)
     print(res)
     
     # bulk_request = ""
@@ -60,7 +78,7 @@ def lambda_handler(event, context):
     # # response = client.update(index=INDEX, id = a_id, body = {'_source':data}) -> not working
     
     
-    results = client.get(index = INDEX, id = a_id)
+    results = client.get(index = INDEX, id = r)
     print("after update results : ", results)
     
     return {
@@ -117,6 +135,24 @@ def query(term):
     results = []
     for hit in hits:
         results.append(hit['_source'])
+    return results
+    
+def query_id(term):
+    q = {'size': 30, 'query': {'multi_match': {'query': term}}}
+    client = OpenSearch(hosts=[{
+        'host': HOST,
+        'port': 443
+    }],
+                        http_auth=get_awsauth(REGION, 'es'),
+                        use_ssl=True,
+                        verify_certs=True,
+                        connection_class=RequestsHttpConnection)
+    res = client.search(index=INDEX, body=q)
+    print(res)
+    hits = res['hits']['hits']
+    results = []
+    for hit in hits:
+        results.append(hit['_id'])
     return results
 
 def get_awsauth(region, service):

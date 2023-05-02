@@ -6,6 +6,8 @@ import os
 import logging
 import re
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -138,18 +140,21 @@ def validationProcess(zipcode):
 
 
 def get_specialty_from_symptoms(symptom_list):
+    print('[DEBUG] inside get_specialty_from_symptom')
     symptom_specialty_table = dynamodb.Table('SymptomSpecialty')
 
     specialties = set()
     for symptom in symptom_list:
         try:
             response = symptom_specialty_table.get_item(
-                Key=symptom
+                Key={'symptom': symptom}
             )
-            for item in response['Items']:
-                specialties.add(item['specialty'])
+            if 'Item' in response:
+                for specialty in response['Item']['specialties']:
+                    specialties.add(specialty)
         except ClientError as e:
             print('Error', e.response['Error']['Message'])
+    print('[DEBUG] finished get_specialty_from_symptom', list(specialties))
     return list(specialties)
 
 
@@ -157,14 +162,23 @@ def get_doctor_from_specialty(specialties, patient_zipcode, num_results=3):
     doctor_table = dynamodb.Table('doctors')
     returned_docs = []
 
+    index_name = 'department-index'
+    index = None
+    for i, gsi in enumerate(doctor_table.global_secondary_indexes):
+        if gsi['IndexName'] == index_name:
+            index = doctor_table.global_secondary_indexes[i]
+            break
+    print('[DEBUG] index is: ', index)
     for specialty in specialties:
         try:
-            response = doctor_table.get_item(
-                Key=specialty
+            response = doctor_table.query(
+                IndexName=index['IndexName'],
+                KeyConditionExpression=Key('department').eq(specialty)
             )
+            print('[DEBUG] doctorsDB response: ', response)
             doctors = response['Items']
             patient_doctor_distance = [
-                distance_from_zipcode(patient_zipcode, d['zipcode']) for d in doctors
+                distance_from_zipcode(patient_zipcode, d['clinic_zip_code']) for d in doctors
             ]
             sorted_doctors = sorted(zip(doctors, patient_doctor_distance), key=lambda x: x[1])
             top_k_sorted_doctors = [doctor for doctor, distance in sorted_doctors[:num_results]]
@@ -216,6 +230,9 @@ def GetRecommendedDoctors(intent_request):
             print("the result of elicit slot")
             print(result)
             return result
+    if not zipcode:
+        return elicit_slot(intent_request, session_attributes, 'zipcode', get_slots(intent_request),
+                           {'contentType': 'PlainText', 'content': 'Please provide your zip code'})
 
     if not zipcode and not symptom1:
         return delegate(intent_request, get_slots(intent_request))
@@ -233,16 +250,26 @@ def GetRecommendedDoctors(intent_request):
                                                   num_results=5)
         print(f"[DEBUG] Top {len(top_k_doctors)} are: {top_k_doctors}")
 
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': '*'
-            },
-            'body': json.dumps({'results': top_k_doctors})
-        }
+        # return {
+        #     'statusCode': 200,
+        #     'headers': {
+        #         'Content-Type': 'application/json',
+        #         'Access-Control-Allow-Headers': 'Content-Type',
+        #         'Access-Control-Allow-Origin': '*',
+        #         'Access-Control-Allow-Methods': '*'
+        #     },
+        #     'body': json.dumps({'results': top_k_doctors})
+        # }
+        # return list of doctors to Lex
+        doctor_info_string = ""
+        for doctor in top_k_doctors:
+            doctor_info_string += f"Doctor ID: {doctor['doctor_id']}, First Name: {doctor['firstName']}, Last Name: {doctor['lastName']}, Email: {doctor['email']}, Clinic Zip Code: {doctor['clinic_zip_code']}\n"
+
+        # Update the response to include the doctor information string
+        return close(intent_request, session_attributes, 'Fulfilled', {
+            'contentType': 'PlainText',
+            'content': doctor_info_string,
+        })
 
 
 # --- Intents ---

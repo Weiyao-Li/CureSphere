@@ -1,21 +1,47 @@
 import boto3
-from elasticsearch import Elasticsearch, RequestsHttpConnection
+from opensearchpy import OpenSearch, RequestsHttpConnection
+from requests_aws4auth import AWS4Auth
 import json
+import decimal
+from json import JSONEncoder
 
-# Elasticsearch configuration
+
+# Custom JSON Encoder to handle Decimal type
+class DecimalEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
+
+
+# OpenSearch configuration
 REGION = 'us-east-1'
 HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
-INDEX = 'appointments'
+INDEX = 'appointment'
 
 # DynamoDB table name
 dynamodb_table = 'medicinedata'
 
-# Elasticsearch configuration
-es = Elasticsearch(
+
+def get_awsauth(region, service):
+    cred = boto3.Session().get_credentials()
+    return AWS4Auth(cred.access_key,
+                    cred.secret_key,
+                    region,
+                    service,
+                    session_token=cred.token)
+
+
+# Get AWS credentials
+awsauth = get_awsauth(REGION, 'es')
+
+# OpenSearch configuration
+os = OpenSearch(
     hosts=[{'host': HOST, 'port': 443}],
     use_ssl=True,
     verify_certs=True,
-    connection_class=RequestsHttpConnection
+    connection_class=RequestsHttpConnection,
+    http_auth=awsauth  # Use the awsauth object returned by get_awsauth
 )
 
 # DynamoDB configuration
@@ -24,17 +50,17 @@ table = dynamodb.Table(dynamodb_table)
 
 
 def get_latest_medicine_name(appointment_id):
-    # Query ElasticSearch for the latest medicine entry with given appointmentId
+    # Query OpenSearch for the latest medicine entry with given appointmentId
     query = {
         "size": 1,
         "query": {
-            "term": {
-                "a_id": appointment_id
+            "match": {
+                "appointmentId": appointment_id
             }
         }
     }
 
-    response = es.search(index=INDEX, body=query)
+    response = os.search(index=INDEX, body=query)  # Change this line
     if response['hits']['total']['value'] > 0:
         return response['hits']['hits'][0]['_source']['medicine']
     else:
@@ -72,7 +98,9 @@ def get_medicine_comparison(medicine_name):
 
 
 def lambda_handler(event, context):
-    appointment_id = event['appointmentId']
+    print('event is', event)
+
+    appointment_id = event['headers']['appointmentId']
     print('here is the app_id you get: ', appointment_id)
 
     medicine_name = get_latest_medicine_name(appointment_id)
@@ -83,7 +111,7 @@ def lambda_handler(event, context):
         if comparison_result:
             return {
                 'statusCode': 200,
-                'body': json.dumps(comparison_result)
+                'body': json.dumps(comparison_result, cls=DecimalEncoder)
             }
         else:
             return {
@@ -111,4 +139,3 @@ def lambda_handler(event, context):
 event include incoming appointmentId
 use this unique id to query es.
 '''
-

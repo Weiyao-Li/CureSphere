@@ -419,7 +419,7 @@ paths:
                 type: string
 
   /bookAppointment:
-    get:
+    post:
       description: book appointment of doc and patient
       operationId: bookAppointment
       parameters:

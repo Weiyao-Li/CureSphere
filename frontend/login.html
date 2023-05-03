@@ -1,10 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <!-- Include the Amazon Cognito SDK -->
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.879.0.min.js"></script>
+<!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/amazon-cognito-identity-js/4.6.0/aws-cognito-sdk.min.js"></script>-->
+<!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/amazon-cognito-identity-js/4.6.0/amazon-cognito-identity.min.js"></script>-->
+  <!-- Include the auth.js file -->
+  <script src="auth.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login and Signup</title>
 </head>
 <body>
-<a href="index.html">Go Back to Main</a>
+  <!-- Add a form with fields for username and password -->
+  <form id="authForm">
+    <h3>Login or Signup</h3>
+    <label>Email:</label>
+    <input type="email" id="email" required>
+    <br>
+    <label>Password:</label>
+    <input type="password" id="password" required>
+    <br>
+    <label>User Type:</label>
+    <select id="userType">
+      <option value="doctor">Doctor</option>
+      <option value="patient">Patient</option>
+    </select>
+    <br>
+    <button type="button" onclick="signIn()">Login</button>
+    <button type="button" onclick="signUp()">Signup</button>
+  </form>
 </body>
 </html>

@@ -11,41 +11,6 @@ consumes:
 produces:
   - application/json
 paths:
-  /medicines/latest:
-    get:
-      summary: Retrieve the latest medicine name added by the doctor in ElasticSearch
-      description: Retrieves the latest medicine name added by the doctor in ElasticSearch using a Lambda function. Optionally, you can filter the search results by session ID.
-      operationId: getLatestMedicineName
-      produces:
-        - application/json
-      parameters:
-        - name: session_id
-          in: query
-          description: ID of the treatment session to filter the search results
-          required: true
-          type: string
-      responses:
-        '200':
-          description: Latest medicine name retrieved successfully
-          schema:
-            type: object
-            properties:
-              medicine_name:
-                type: string
-        '404':
-          description: No medicine name found
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-        '500':
-          description: Internal server error
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
   /chatbot:
     post:
       summary: The endpoint for the Natural Language Understanding API.
@@ -379,7 +344,8 @@ paths:
                 type: string
   /patients/{id}:
     get:
-      summary: Retrieve appointment link for patient
+      summary: Retrieve the patient information
+      operationId: getPatient
       produces:
         - application/json
       parameters:
@@ -389,23 +355,106 @@ paths:
           required: true
           type: string
       responses:
-        200:
-          description: Successful response
+        '200':
+          description: Successfully fetched patient record
           schema:
             type: object
             properties:
-              id:
+              user_id:
                 type: string
-                description: ID of the patient
-              appointment_link:
+              firstName:
                 type: string
-                description: Link to the patient's appointment
-        404:
+              lastName:
+                type: string
+              age:
+                type: integer
+              gender:
+                type: string
+              insurance_provider:
+                type: string
+              city:
+                type: string
+              zip_code:
+                type: string
+              email:
+                type: string
+        '400':
           description: Patient ID not found
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  
+  /doctors/{id}:
+    get:
+      summary: Retrieve the doctor information
+      operationId: getDoctor
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: ID of the doctor
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully fetched doctor
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+              firstName:
+                type: string
+              lastName:
+                type: string
+              department:
+                type: string
+              specialty:
+                type: string
+              available_days:
+                type: array
+                items:
+                  type: string
+                  format: string
+              available_time_slots:
+                type: array
+                items:
+                  type: string
+                  format: date-time
+              city:
+                type: string
+              zip_code:
+                type: string
+              email:
+                type: string
+        '400':
+          description: Doctor ID not found
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string        
 
   /getMedicineComparison:
     get:
-      description: refresh and get the most updated medicine name that the doctor inputted and then predefined some values in  to return the lowest 5 products with the same name
+      description: refresh and get the most updated medicine name that the doctor inputted and then predefined some values in  to return the lowest five products with the same name
       operationId: getMedicineComparison
       parameters:
         - name: appointmentId

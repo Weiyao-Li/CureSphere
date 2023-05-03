@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     # timestamp = results['_source']['timestamp']   
     
     #1 save the record
-    data = {'appointmentId': appointment_id, 'doctorId': doctorId, 'patientId': patientId, 'date': date, 'time': time, "feedback": feedback, "medicine": medicine, 'timestamp':timestamp}
+    data = {'appointmentId': appointmentId, 'doctorId': doctorId, 'patientId': patientId, 'date': date, 'time': time, "feedback": feedback, "medicine": medicine, 'timestamp':timestamp}
     #data ={"a_id": a_id, "feedback": feedback, "medicine": medicine, "a_link": a_link, "doctor_id": doctor_id , "patient_id":patient_id, "timestamp":timestamp}
     
     #2 delete the current record
@@ -78,7 +78,7 @@ def lambda_handler(event, context):
     # # response = client.update(index=INDEX, id = a_id, body = {'_source':data}) -> not working
     
     
-    results = client.get(index = INDEX, id = r)
+    results = client.get(index = INDEX, id = r_id)
     print("after update results : ", results)
     
     return {

@@ -43,68 +43,6 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /postPrescriptionData:
-    post:
-      summary: Post prescription data by doctor such as feedback and prescription with medicines after the appointment to ElasticSearch
-      description: Post prescription data (text fields) by doctor such as feedback and prescription with medicines after the appointment to ElasticSearch
-      operationId: postPrescriptionData
-      produces:
-        - application/json
-      parameters:
-        - name: prescription_data
-          in: body
-          description: Prescription data as a JSON with fields - appointment_id, appointment_feedback and medicine_list
-          required: true
-          schema:
-            type: object
-            properties:
-              appointment_id:
-                type: string
-              appointment_feedback:
-                type: string
-              medicine_list:
-                type: array
-                items:
-                  type: string
-                  format: string
-            required:
-              - appointment_id
-              - appointment_feedback
-              - medicine_list
-      responses:
-        '200':
-          description: Prescription data posted successfully
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-              data:
-                type: object
-                properties:
-                  appointment_id:
-                    type: string
-                  appointment_feedback:
-                    type: string
-                  medicine_list:
-                    type: array
-                    items:
-                      type: string
-                      format: string
-        '404':
-          description: Error in posting prescription data
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
-        '500':
-          description: Internal server error
-          schema:
-            type: object
-            properties:
-              error:
-                type: string
   /createPatient:
     post:
       summary: Create a new patient record

@@ -23,7 +23,8 @@ def lambda_handler(event, context):
                 {'type': 'unstructured',
                  'unstructured': {
                      'id': 'string',
-                     'text': msg_from_lex[0]['content'],
+                     # 'text': msg_from_lex[0]['content'],
+                     'text': response,
                      'timestamp': 'string'
                  }}
             ]

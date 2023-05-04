@@ -250,16 +250,7 @@ def GetRecommendedDoctors(intent_request):
                                                   num_results=5)
         print(f"[DEBUG] Top {len(top_k_doctors)} are: {top_k_doctors}")
 
-        # return {
-        #     'statusCode': 200,
-        #     'headers': {
-        #         'Content-Type': 'application/json',
-        #         'Access-Control-Allow-Headers': 'Content-Type',
-        #         'Access-Control-Allow-Origin': '*',
-        #         'Access-Control-Allow-Methods': '*'
-        #     },
-        #     'body': json.dumps({'results': top_k_doctors})
-        # }
+
         # return list of doctors to Lex
         doctor_info_string = ""
         for doctor in top_k_doctors:
@@ -268,7 +259,8 @@ def GetRecommendedDoctors(intent_request):
         # Update the response to include the doctor information string
         return close(intent_request, session_attributes, 'Fulfilled', {
             'contentType': 'PlainText',
-            'content': doctor_info_string,
+            'content': json.dumps(top_k_doctors),
+            # 'content': doctor_info_string,
         })
 
 

@@ -44,7 +44,7 @@ def get_medicine_comparison(medicine_name):
                 'seller_name': medicine['seller_name'],
                 'medicine_name': medicine['medicine_name'],
                 'price': medicine['price'],
-                'zip_code': medicine['zip_code']
+                'zip_code': int(medicine['zip_code'])
             })
         return result
     else:
@@ -59,6 +59,7 @@ def lambda_handler(event, context):
 
     if medicine_name:
         comparison_result = get_medicine_comparison(medicine_name)
+
         if comparison_result:
             return {
                 'statusCode': 200,

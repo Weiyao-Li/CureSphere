@@ -61,6 +61,10 @@ $(document).ready(function() {
       const intentState = sessionState.intent.state;
 
       if (intentState === "Fulfilled") {
+
+        // save data to local storage
+        localStorage.setItem('doctorData', JSON.stringify(data.messages[0].unstructured.text.messages[0].content));
+
         handleFulfilledIntent();
       } else {
         if (data.messages && data.messages.length > 0) {

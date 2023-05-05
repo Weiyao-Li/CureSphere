@@ -395,9 +395,9 @@ paths:
       description: refresh and get the most updated medicine name that the doctor inputted and then predefined some values in  to return the lowest five products with the same name
       operationId: getMedicineComparison
       parameters:
-        - name: appointmentId
+        - name: medicineName
           in: header
-          description: the unique appointmentId
+          description: the medicineName
           required: true
           type: string
       responses:

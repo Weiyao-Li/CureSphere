@@ -1,6 +1,4 @@
 import boto3
-from opensearchpy import OpenSearch, RequestsHttpConnection
-from requests_aws4auth import AWS4Auth
 import json
 import decimal
 from json import JSONEncoder
@@ -14,57 +12,13 @@ class DecimalEncoder(JSONEncoder):
         return super(DecimalEncoder, self).default(obj)
 
 
-# OpenSearch configuration
 REGION = 'us-east-1'
-HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
-INDEX = 'appointment'
-
 # DynamoDB table name
 dynamodb_table = 'medicinedata'
-
-
-def get_awsauth(region, service):
-    cred = boto3.Session().get_credentials()
-    return AWS4Auth(cred.access_key,
-                    cred.secret_key,
-                    region,
-                    service,
-                    session_token=cred.token)
-
-
-# Get AWS credentials
-awsauth = get_awsauth(REGION, 'es')
-
-# OpenSearch configuration
-os = OpenSearch(
-    hosts=[{'host': HOST, 'port': 443}],
-    use_ssl=True,
-    verify_certs=True,
-    connection_class=RequestsHttpConnection,
-    http_auth=awsauth  # Use the awsauth object returned by get_awsauth
-)
 
 # DynamoDB configuration
 dynamodb = boto3.resource('dynamodb', region_name=REGION)
 table = dynamodb.Table(dynamodb_table)
-
-
-def get_latest_medicine_name(appointment_id):
-    # Query OpenSearch for the latest medicine entry with given appointmentId
-    query = {
-        "size": 1,
-        "query": {
-            "match": {
-                "appointmentId": appointment_id
-            }
-        }
-    }
-
-    response = os.search(index=INDEX, body=query)  # Change this line
-    if response['hits']['total']['value'] > 0:
-        return response['hits']['hits'][0]['_source']['medicine']
-    else:
-        return None
 
 
 def get_medicine_comparison(medicine_name):
@@ -100,10 +54,7 @@ def get_medicine_comparison(medicine_name):
 def lambda_handler(event, context):
     print('event is', event)
 
-    appointment_id = event['headers']['appointmentId']
-    print('here is the app_id you get: ', appointment_id)
-
-    medicine_name = get_latest_medicine_name(appointment_id)
+    medicine_name = event['headers']['medicineName']
     print('here is the medicine name you get: ', medicine_name)
 
     if medicine_name:
@@ -123,19 +74,3 @@ def lambda_handler(event, context):
             'statusCode': 404,
             'body': json.dumps({"message": "No latest medicine name found for the given appointmentId."})
         }
-
-
-# workflow:
-# the doctor as the user will input the name of the prescription into the elastic search.
-# And please assume that there is a MedicineDataDB that has seller column, medicine name column, price column, and zip code.
-# Here is the logic: the patient will click a refresh button and input an unique appointmentId and get the most updated medicine name that the doctor inputted in the elastic search.
-# Specifically, the unique appointmentId is used to lock in that corresponding patient.
-# Then, we will use that medicine name to go to MedicineDataDB to do the price comparison by selecting the lowest 3 products with the same medicine name as the name of the prescription in the db.
-# What would return to the patient would be the seller name, medicine name, price and zip code,
-# so that the user would know the existence of a lower-price medicine product and where it is and who is selling it.
-
-# change
-'''
-event include incoming appointmentId
-use this unique id to query es.
-'''

@@ -9,6 +9,7 @@ $(document).ready(function() {
         <div class="doctor">
           <h3>${doctor.firstName} ${doctor.lastName}</h3>
           <p>Clinic Zip Code: ${doctor.clinic_zip_code}</p>
+          <button class="book-btn" data-doctor-id="${doctor.doctor_id}">Book</button>
         </div>
       `;
       $('#doctor-container').append(doctorElement);
@@ -16,4 +17,11 @@ $(document).ready(function() {
   } else {
     $('#doctor-container').append('<p>No doctors found.</p>');
   }
+
+  // Book button click event
+  $('.book-btn').click(function() {
+    const doctorId = $(this).data('doctor-id');
+    localStorage.setItem('selectedDoctorId', doctorId);
+    window.location.href = 'bookAppointment.html';
+  });
 });

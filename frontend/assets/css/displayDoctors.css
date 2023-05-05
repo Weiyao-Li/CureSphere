@@ -1,41 +1,61 @@
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
-  margin: 0;
-  padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    margin: 0;
+    padding: 0;
 }
 
 #doctor-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 30px;
 }
 
 .doctor {
-  background-color: #fff;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
-  margin: 10px;
-  padding: 20px;
-  width: 300px;
-  transition: all 0.3s;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    margin: 10px;
+    padding: 20px;
+    width: 300px;
+    transition: all 0.3s;
 }
 
 .doctor:hover {
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-5px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
 }
 
 .doctor h3 {
-  margin: 0 0 10px;
-  font-size: 24px;
-  color: #4a4a4a;
+    margin: 0 0 10px;
+    font-size: 24px;
+    color: #4a4a4a;
 }
 
 .doctor p {
-  margin: 5px 0;
-  font-size: 16px;
-  color: #7a7a7a;
+    margin: 5px 0;
+    font-size: 16px;
+    color: #7a7a7a;
+}
+
+.book-btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition-duration: 0.4s;
+}
+
+.book-btn:hover {
+    background-color: #45a049;
+    color: white;
 }

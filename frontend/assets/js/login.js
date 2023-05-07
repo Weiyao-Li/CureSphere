@@ -20,42 +20,6 @@ document.getElementById("registerPatientBtn").addEventListener("click", function
     document.getElementById("doctorForm").style.display = "none";
 });
 
-// Login function - old
-// function login(username, password) {
-//         var params = {
-//             'username': username,
-//             'password': password
-//         };
-//
-//         var additionalParams = {
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Access-Control-Allow-Headers': '*',
-//                 'Access-Control-Allow-Origin': '*',
-//                 'Access-Control-Allow-Methods': '*',
-//             }
-//         };
-//
-//         apigClient.loginPost(params, {}, additionalParams)
-//             .then(function (result) {
-//                 // Call the populateDayAndSlots function with the result data
-//                 console.log('Login result: ', result['body']['result'])
-//                 if (result['body']['result'] === 'patient') {
-//                     window.location.href = 'patientPortal.html';
-//                 } else if (result['body']['result'] === 'doctor') {
-//                     window.location.href = 'doctorPortal.html';
-//                 } else {
-//                     alert('Invalid username or password. Please try again.');
-//                 }
-//             }).catch(function (result) {
-//             console.log("Failed to find a doctor/patient user: ", result);
-//             if (result['status'] === 400) {
-//                 alert('Logging failed!')
-//             }
-//         });
-// }
-
-// Login function - new
 // Login function
 function login(username, password) {
     var params = {
@@ -116,13 +80,6 @@ function searchUserInDB(username, tableName) {
         } else {
             reject(new Error('Invalid table name provided.'));
         }
-        // dynamoDB.get(params, (error, data) => {
-        //     if (error) {
-        //         reject(error);
-        //     } else {
-        //         resolve(data.Item);
-        //     }
-        // });
     });
 }
 
@@ -279,17 +236,68 @@ function registerDoctor(event) {
     apigClient.createDoctorPost(params, data, additionalParams)
         .then((result) => {
             if (result.success) {
-                alert("Doctor registered successfully!");
-            } else {
-                alert("Failed to register doctor.");
+                window.location.href = 'login.html';
+                // alert("Doctor registered successfully!");
             }
         })
         .catch((error) => {
             console.error("Error registering doctor:", error);
-            alert("An error occurred while registering the doctor. Please try again.");
+            if (error.status === 400) {
+                alert("Failed to register doctor.");
+            }
+            // alert("An error occurred while registering the doctor. Please try again.");
         });
 }
 
 
 document.getElementById("doctorForm").addEventListener("submit", registerDoctor);
 
+// Registering a new patient
+function registerPatient(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+
+    const data = {};
+
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+
+    const params = {
+        email: data.patientUsername,
+        firstName: data.patientFirstName,
+        lastName: data.patientLastName,
+        city: data.patientCity,
+        zip_code: data.patientZipCode,
+        age: data.age,
+        gender: data.gender,
+        insurance_provider: data.insuranceProvider,
+    };
+
+    var additionalParams = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+        }
+    };
+
+    apigClient.createPatientPost(params, data, additionalParams)
+        .then((result) => {
+            if (result.status === 200) {
+                window.location.href = 'login.html';
+                // alert("Patient registered successfully!");
+            }
+        })
+        .catch((error) => {
+            console.error("Error registering patient:", error);
+            if (error.status === 400) {
+                alert("Failed to register patient.");
+            }
+            // alert("An error occurred while registering the patient. Please try again.");
+        });
+}
+
+document.getElementById("patientForm").addEventListener("submit", registerPatient);

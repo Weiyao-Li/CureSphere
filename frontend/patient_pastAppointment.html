@@ -25,17 +25,17 @@
 
     </div>
 
-		<script type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
-		<script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
-		<script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
-		<script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
-		<script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
-		<script type="text/javascript" src="lib/url-template/url-template.js"></script>
-		<script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
-		<script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
-		<script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
-		<script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
-		<script type="text/javascript" src="apigClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
 	
 	<script type = "text/javascript">
 		var apigClient = apigClientFactory.newClient();
@@ -94,7 +94,7 @@
 						'<table class="table"><tr><th>Doctor email</th><td id="doctor">' + doctorId + '</td></tr><tr><th>Date</th><td id="date">' 
 							+ date + '</td></tr><tr><th>Time</th><td id="time">' + time + '</td></tr><tr><th>Medicine</th><td id="medicine">' 
 							+ medicine + '</td></tr><tr><th>Feedback</th><td id="feedback">'+ feedback + '</td></tr><tr><th>Action</th>'
-							+ '<td><a href="medicine_comparison.html">'
+							+ '<td><a href="medicineComparison.html">'
 							+ '<button class="btn" id="price" onclick= "setName(\'' + medicine + '\')">Price Comparison</button>'
 							+ '</a></td></tr>'
 							+'</table>';

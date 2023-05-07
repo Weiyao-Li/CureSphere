@@ -1,167 +1,204 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Doctor Submit</title>
-	<link rel="stylesheet" href="assets/css/style.css">
-	<a href="index.html"> Go Back to Main </a>
-	
+    <title>Book Appointment</title>
+    <!-- include jQuery library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- include jQuery UI library -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <style>
+        label {
+            display: inline-block;
+            width: 100px;
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        input[type="text"], select {
+            width: 200px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 215px;
+        }
+
+        button {
+            background-color: green;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
 </head>
-
 <body>
-	<div class="container">
+<h1>Book Appointment</h1>
+<div>
+    <label for="doctor_id">Doctor ID:</label>
+    <input type="text" id="doctor_id">
+</div>
+<div>
+    <label for="patient_id">Patient ID:</label>
+    <input type="text" id="patient_id">
+</div>
+<div>
+    <label for="date">Date:</label>
+    <input type="text" id="date" placeholder="Select a date">
+</div>
+<div>
+    <label for="day">Day:</label>
+    <input type="text" id="day">
+</div>
+<div>
+    <label for="slot">Slot:</label>
+    <select id="slot"></select>
+</div>
+<br>
+<br>
+<button id="book_btn">Book Appointment</button>
+<br>
+<br>
+<br>
+<div id="message" style="display: none;"></div>
 
-		<section class="section">
-			<div class="section-header">
-				<h2>Personal Information</h2>
-			</div>
+<script type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
+<script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
+<script type="text/javascript" src="lib/url-template/url-template.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
+<script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
+<script type="text/javascript" src="apigClient.js"></script>
 
-			<div class="row">
-		    	<div id="search_results_user_info">
-		    </div>  
+<script type="text/javascript">
+    // initialize datepicker widget
+    $(document).ready(function () {
+        $("#date").datepicker({
+            minDate: 0,
+            onSelect: function () {
+                getDoctorAvailability();
+            }
+        });
+    });
 
-		</section>
-
-		<section class="section">
-			<div class="section-header">
-				<h2>Current Appointments</h2>
-				<a href="doctor_submit.html"> <button class="btn" id="submit">Submit Medicine/Feedback</button> </a>
-			</div>
-
-			<div class="row">
-		    	<div id="search_results">
-		    </div>
-		</section>
-
-        <section class="section">
-			<div class="section-header">
-				<h2>Past Appointments</h2>
-				<a href="doctor_pastAppointment.html"> <button class="btn" id="more-info">More Info</button> </a>
-			</div>
-		</section>
-    </div>
-        
-    		<script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
-		<script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
-
-<script type = "text/javascript">
     var apigClient = apigClientFactory.newClient();
 
-	window.onload = function() {
-		getUserInfo();
-		getCurrAppointment();
-	};
+    function getDoctorAvailability() {
+        const doctorId = $("#doctor_id").val();
+        const date = $("#date").val();
+        console.log("date", date)
 
-	function getUserInfo() {
-        //TODO : get user_id, change the codes below
-        //var user_id = "wl2872@columbia.edu"
-		var user_id = localStorage.getItem('user_id')
-    	user_id = JSON.parse(user_id)
-    	console.log("user_id : ", user_id)
-
+        var input = document.getElementById("patient_id");
+        input.value = localStorage.getItem('user_id');
         var params = {
-				'id' : user_id,
+            'doctorId': localStorage.getItem('selectedDoctorId')
         };
-        
+
         var additionalParams = {
-          headers: {
-            'Content-Type': 'application/json',
-			'Access-Control-Allow-Headers': '*',
-      		'Access-Control-Allow-Origin': '*',
-      		'Access-Control-Allow-Methods': '*',
-          }
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': '*',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+            },
+            queryParams: {
+                'date': date
+            }
         };
-        
-        apigClient.doctorsIdGet(params, {}, additionalParams)
-            .then(function(result) {
-                console.log("Search Result : ", result['data']['Doctor']);
 
-				var user_info = result['data']['Doctor']
+        apigClient.getDoctorAvailabilityGet(params, {}, additionalParams)
+            .then(function (result) {
+                console.log("Doctor availability obtained: ", result);
+                // Call the populateDayAndSlots function with the result data
+                populateDayAndSlots(result.data);
 
-				//parse info
-				var user_id = user_info['email']
-				var firstName = user_info['firstName']
-				var lastName = user_info['lastName']
-				var department = user_info['department']
-				var specialties = user_info['specialties']
-				var city = user_info['city']
-				var clinic_zip_code = user_info['clinic_zip_code']
-
-				var search_result_html = document.getElementById("search_results_user_info");
-				search_result_html.innerHTML = '<table class="table"><tr><th>Role</th><td id="role">Doctor</td></tr><tr><th>Email (user_id)</th><td>' 
-					+ user_id + '</td></tr><tr><th>First Name</th><td>' + firstName + '</td></tr><tr><th>Last Name</th><td>'+lastName 
-					+ '</td></tr><tr><th>Department</th><td>' + department + '</td></tr><tr><th>Specialties</th><td>'+specialties
-					+'</td></tr><tr><th>City</th><td>'+city+ '</td></tr><tr><th>Clinic Zip Code</th><td>'+clinic_zip_code +'</td></tr></table>';
-				
-            }).catch(function(error) {
-                console.error(error);
-            });
+            }).catch(function (result) {
+            console.log("Failed to get doctor availability: ", result);
+            if (result.status === 400) {
+                // Clear the Day and Slots fields
+                clearDayAndSlots();
+                // Display the 'Booking Unavailable' message
+                alert('Booking Unavailable');
+            }
+        });
     }
 
-    function getCurrAppointment() {
-        //TODO : get user_id -> change the code below
-        //var user_id = "wl2872@columbia.edu"
-		var user_id = localStorage.getItem('user_id')
-    	user_id = JSON.parse(user_id)
-    	console.log("user_id : ", user_id)
-		
-        var user_role = "doctor"
-        var appointment_type = "curr"
+    function clearDayAndSlots() {
+        const dayInput = $("#day");
+        const slotSelect = $("#slot");
 
-        var params = {
-				'role' : user_role,
-				'appointment_type' : appointment_type,
-				'email' : user_id
-        };
-        
-        var additionalParams = {
-          headers: {
-            'Content-Type': 'application/json',
-			'Access-Control-Allow-Headers': '*',
-      		'Access-Control-Allow-Origin': '*',
-      		'Access-Control-Allow-Methods': '*',
-          }
-        };
-        
-        apigClient.getAppointmentGet(params, {}, additionalParams)
-            .then(function(result) {
-                console.log("Search Result : ", result);
-				console.log("curr app : ", result['data']['current_appointments'])
+        // Clear day input field
+        dayInput.val('');
 
-				var appointments = result['data']['current_appointments']
-				var i;
-
-				var search_result_html_cur = document.getElementById("search_results");
-				search_result_html_cur.innerHTML = "";
-
-          		for (i=0; i<appointments.length; i++) {
-					patientId = appointments[i]['patientId']
-					date = appointments[i]['date']
-					time = appointments[i]['time']
-						
-					
-						
-					search_result_html_cur.innerHTML = search_result_html_cur.innerHTML + 
-					'<table class="table"><tr><th>Patient email</th><td>' + patientId + '</td></tr><tr><th>Date</th><td>' 
-					+ date + '</td></tr><tr><th>Time</th><td>' + time + '</td></tr></table>';
-          		}
-      
-            }).catch(function(result) {
-                console.log(result);
-            });
+        // Clear slot dropdown
+        slotSelect.empty();
     }
 
+    function populateDayAndSlots(data) {
+        const dayInput = $("#day");
+        const slotSelect = $("#slot");
+
+        // Populate day input field
+        dayInput.val(data.Day);
+
+        // Populate slot dropdown
+        data.Slots.forEach(slot => {
+            const slotOption = $("<option></option>");
+            slotOption.text(slot);
+            slotOption.val(slot);
+            slotSelect.append(slotOption);
+        });
+    }
+
+    // add event listener to book appointment button to call bookAppointment() function
+    const bookBtn = document.getElementById("book_btn");
+    bookBtn.addEventListener("click", bookAppointment);
+
+    function bookAppointment() {
+    const doctorId = $("#doctor_id").val();
+    const patientId = $("#patient_id").val();
+    const date = $("#date").val();
+    const slot = $("#slot").val();
+
+    var params = {
+        'doctorId': doctorId,
+        'patientId': patientId
+    };
+
+    var additionalParams = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+        },
+        queryParams: {
+            'Date': date,
+            'Time': slot
+        }
+    };
+
+    apigClient.bookAppointmentPost(params, {}, additionalParams)
+        .then(function(result) {
+            console.log("Appointment successfully booked! : ", result);
+            showMessage('Appointment Successfully Booked! Thank You!', 'green');
+        }).catch(function(result) {
+            console.log("Failed to book appointment: ", result);
+        });
+}
+
+function showMessage(message, color) {
+    const messageDiv = $('#message');
+    messageDiv.text(message);
+    messageDiv.css('color', color);
+    messageDiv.show();
+}
 </script>
-
-	
 </body>
 </html>

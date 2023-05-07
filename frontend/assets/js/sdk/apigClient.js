@@ -53,7 +53,7 @@ apigClientFactory.newClient = function (config) {
 
     
     // extract endpoint and path from url
-    var invokeUrl = 'https://myjt0nwgfa.execute-api.us-east-1.amazonaws.com/v3';
+    var invokeUrl = 'https://myjt0nwgfa.execute-api.us-east-1.amazonaws.com/final';
     var endpoint = /(^https?:\/\/[^\/]+)/g.exec(invokeUrl)[1];
     var pathComponent = invokeUrl.substring(endpoint.length);
 
@@ -86,13 +86,13 @@ apigClientFactory.newClient = function (config) {
     apigClient.bookAppointmentPost = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['patientId', 'doctorId'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['patientId', 'doctorId', 'Time', 'Date'], ['body']);
         
         var bookAppointmentPostRequest = {
             verb: 'post'.toUpperCase(),
             path: pathComponent + uritemplate('/bookAppointment').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
-            headers: apiGateway.core.utils.parseParametersToObject(params, ['patientId', 'doctorId']),
-            queryParams: apiGateway.core.utils.parseParametersToObject(params, ['Time', 'Date']),
+            headers: apiGateway.core.utils.parseParametersToObject(params, ['patientId', 'doctorId', 'Time', 'Date']),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
             body: body
         };
         
@@ -338,13 +338,13 @@ apigClientFactory.newClient = function (config) {
     apigClient.getDoctorAvailabilityGet = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['doctorId'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['doctorId', 'date'], ['body']);
         
         var getDoctorAvailabilityGetRequest = {
             verb: 'get'.toUpperCase(),
             path: pathComponent + uritemplate('/getDoctorAvailability').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
-            headers: apiGateway.core.utils.parseParametersToObject(params, ['doctorId']),
-            queryParams: apiGateway.core.utils.parseParametersToObject(params, ['date']),
+            headers: apiGateway.core.utils.parseParametersToObject(params, ['doctorId', 'date']),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
             body: body
         };
         
@@ -374,12 +374,12 @@ apigClientFactory.newClient = function (config) {
     apigClient.getMedicineComparisonGet = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['appointmentId'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['medicineName'], ['body']);
         
         var getMedicineComparisonGetRequest = {
             verb: 'get'.toUpperCase(),
             path: pathComponent + uritemplate('/getMedicineComparison').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
-            headers: apiGateway.core.utils.parseParametersToObject(params, ['appointmentId']),
+            headers: apiGateway.core.utils.parseParametersToObject(params, ['medicineName']),
             queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
             body: body
         };
@@ -404,6 +404,42 @@ apigClientFactory.newClient = function (config) {
         
         
         return apiGatewayClient.makeRequest(getMedicineComparisonOptionsRequest, authType, additionalParams, config.apiKey);
+    };
+    
+    
+    apigClient.loginPost = function (params, body, additionalParams) {
+        if(additionalParams === undefined) { additionalParams = {}; }
+        
+        apiGateway.core.utils.assertParametersDefined(params, ['username', 'password'], ['body']);
+        
+        var loginPostRequest = {
+            verb: 'post'.toUpperCase(),
+            path: pathComponent + uritemplate('/login').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
+            headers: apiGateway.core.utils.parseParametersToObject(params, ['username', 'password']),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
+            body: body
+        };
+        
+        
+        return apiGatewayClient.makeRequest(loginPostRequest, authType, additionalParams, config.apiKey);
+    };
+    
+    
+    apigClient.loginOptions = function (params, body, additionalParams) {
+        if(additionalParams === undefined) { additionalParams = {}; }
+        
+        apiGateway.core.utils.assertParametersDefined(params, [], ['body']);
+        
+        var loginOptionsRequest = {
+            verb: 'options'.toUpperCase(),
+            path: pathComponent + uritemplate('/login').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
+            headers: apiGateway.core.utils.parseParametersToObject(params, []),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
+            body: body
+        };
+        
+        
+        return apiGatewayClient.makeRequest(loginOptionsRequest, authType, additionalParams, config.apiKey);
     };
     
     

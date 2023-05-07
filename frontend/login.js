@@ -213,40 +213,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+
 function registerDoctor(event) {
     event.preventDefault();
 
     const formData = new FormData(event.target);
 
-    let available_days = ''; // Add this line to create a separate variable for available_days
     const data = {};
+    const available_days = [];
+    const available_time_slots = [];
 
-    for (const [key, value] of formData.entries()) {
-        if (key === "days") {
-            if (!data[key]) {
-                data[key] = [];
-            }
-            const day = value;
-            const startId = day.toLowerCase() + "Start";
-            const endId = day.toLowerCase() + "End";
-            const startTime = formData.get(startId);
-            const endTime = formData.get(endId);
+    const daysCheckboxes = document.querySelectorAll('input[type="checkbox"][name="days"]');
+    const startTimeSelects = document.querySelectorAll('.startTime');
+    const endTimeSelects = document.querySelectorAll('.endTime');
+
+    daysCheckboxes.forEach((checkbox, index) => {
+        if (checkbox.checked) {
+            const day = checkbox.value;
+            const startTime = startTimeSelects[index].value;
+            const endTime = endTimeSelects[index].value;
 
             if (startTime && endTime) {
                 const timeSlot = startTime + "-" + endTime;
-                data[key].push({
-                    day,
-                    timeSlot
-                });
-                available_days += day + ','; // Add this line to update the available_days string
+                available_days.push(day);
+                available_time_slots.push(timeSlot.replace(/ /g, '')); // remove spaces
             }
-        } else {
+        }
+    });
+
+    formData.forEach((value, key) => {
+        if (key !== "days") {
             data[key] = value;
         }
-    }
+    });
 
-    available_days = available_days.slice(0, -1); // Remove the last comma from the string
-
+    const formatted_available_days = '[' + available_days.join(',') + ']';
+    const formatted_available_time_slots = '[' + available_time_slots.join(',') + ']';
 
     const params = {
         specialties: data.specialty,
@@ -256,11 +258,12 @@ function registerDoctor(event) {
         email: data.doctorUsername,
         lastName: data.doctorLastName,
         city: data.city,
-        available_days: available_days,
-        available_time_slots: data.days.map(dayObj => dayObj.day + ':' + dayObj.timeSlot).join(','),
+        available_days: formatted_available_days,
+        available_time_slots: formatted_available_time_slots,
     };
 
-    console.log('available_days', available_days);
+    console.log('available_days:', formatted_available_days);
+    console.log('available_time_slots:', formatted_available_time_slots);
 
     var additionalParams = {
         headers: {
@@ -285,4 +288,6 @@ function registerDoctor(event) {
         });
 }
 
+
 document.getElementById("doctorForm").addEventListener("submit", registerDoctor);
+

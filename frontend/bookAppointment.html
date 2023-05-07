@@ -83,95 +83,103 @@
             minDate: 0,
             onSelect: function () {
                 getDoctorAvailability();
-            }
-        });
+        }
     });
 
-    var apigClient = apigClientFactory.newClient();
+    // call getDoctorAvailability function on page load to populate doctor_id and patient_id fields
+    getDoctorAvailability();
+});
 
-    function getDoctorAvailability() {
-//         const doctorId = $("#doctor_id").val();
-        const date = $("#date").val();
-        console.log("date", date)
-        
-        var doctorId = document.getElementById("doctor_id");
-        doctorId.value = localStorage.getItem('selectedDoctorId');
+var apigClient = apigClientFactory.newClient();
 
-        var patientId = document.getElementById("patient_id");
-        patientId.value = localStorage.getItem('user_id');
-        
-        console.log("doctorId", doctorId)
-        console.log("patientId", patientId)
-        var params = {
-            'doctorId': doctorId
-        };
+function getDoctorAvailability() {
+    var doctorId = document.getElementById("doctor_id");
+    doctorId.value = localStorage.getItem('selectedDoctorId');
 
-        var additionalParams = {
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Headers': '*',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': '*',
-            },
-            queryParams: {
-                'date': date
-            }
-        };
+    var patientId = document.getElementById("patient_id");
+    patientId.value = localStorage.getItem('user_id').replace(/"/g, '');
 
-        apigClient.getDoctorAvailabilityGet(params, {}, additionalParams)
-            .then(function (result) {
-                console.log("Doctor availability obtained: ", result);
-                // Call the populateDayAndSlots function with the result data
-                populateDayAndSlots(result.data);
+    const date = $("#date").val();
+    console.log("date", date)
 
-            }).catch(function (result) {
-            console.log("Failed to get doctor availability: ", result);
-            if (result.status === 400) {
-                // Clear the Day and Slots fields
-                clearDayAndSlots();
-                // Display the 'Booking Unavailable' message
-                alert('Booking Unavailable');
-            }
-        });
-    }
+    console.log("doctorId", doctorId.value)
+    console.log("patientId", patientId.value)
+    var params = {
+        'doctorId': doctorId.value
+    };
 
-    function clearDayAndSlots() {
-        const dayInput = $("#day");
-        const slotSelect = $("#slot");
+    var additionalParams = {
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+        },
+        queryParams: {
+            'date': date
+        }
+    };
 
-        // Clear day input field
-        dayInput.val('');
+    apigClient.getDoctorAvailabilityGet(params, {}, additionalParams)
+        .then(function (result) {
+            console.log("Doctor availability obtained: ", result);
+            // Call the populateDayAndSlots function with the result data
+            populateDayAndSlots(result.data);
 
-        // Clear slot dropdown
-        slotSelect.empty();
-    }
+        }).catch(function (result) {
+        console.log("Failed to get doctor availability: ", result);
+        if (result.status === 400) {
+            // Clear the Day and Slots fields
+            clearDayAndSlots();
+            // Display the 'Booking Unavailable' message
+            alert('Booking Unavailable');
+        }
+    });
+}
 
-    function populateDayAndSlots(data) {
-        const dayInput = $("#day");
-        const slotSelect = $("#slot");
+function clearDayAndSlots() {
+    const dayInput = $("#day");
+    const slotSelect = $("#slot");
 
-        // Populate day input field
-        dayInput.val(data.Day);
+    // Clear day input field
+    dayInput.val('');
 
-        // Populate slot dropdown
-        data.Slots.forEach(slot => {
-            const slotOption = $("<option></option>");
-            slotOption.text(slot);
-            slotOption.val(slot);
-            slotSelect.append(slotOption);
-        });
-    }
+    // Clear slot dropdown
+    slotSelect.empty();
+}
 
-    // add event listener to book appointment button to call bookAppointment() function
-    const bookBtn = document.getElementById("book_btn");
-    bookBtn.addEventListener("click", bookAppointment);
+function populateDayAndSlots(data) {
+    const dayInput = $("#day");
+    const slotSelect = $("#slot");
 
-    function bookAppointment() {
+    // Populate day input field
+    dayInput.val(data.Day);
+
+    // Populate slot dropdown
+    data.Slots.forEach(slot => {
+        const slotOption = $("<option></option>");
+        slotOption.text(slot);
+        slotOption.val(slot);
+        slotSelect.append(slotOption);
+    });
+}
+
+// add event listener to book appointment button to call bookAppointment() function
+const bookBtn = document.getElementById("book_btn");
+bookBtn.addEventListener("click", bookAppointment);
+
+function bookAppointment() {
     const doctorId = $("#doctor_id").val();
     const patientId = $("#patient_id").val();
     const date = $("#date").val();
     const slot = $("#slot").val();
 
+    // Check if the patientId and doctorId are the same
+    if (patientId === doctorId) {
+        alert("Patient and doctor IDs cannot be the same!");
+        return;
+    }
+    
     var params = {
         'doctorId': doctorId,
         'patientId': patientId

@@ -99,6 +99,9 @@
 
         var patientId = document.getElementById("patient_id");
         patientId.value = localStorage.getItem('user_id');
+        
+        console.log("doctorId", doctorId)
+        console.log("patientId", patientId)
         var params = {
             'doctorId': doctorId
         };

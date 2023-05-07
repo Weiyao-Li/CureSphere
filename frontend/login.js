@@ -78,9 +78,9 @@ function login(username, password) {
             console.log('Login result: ', result);
             let responseBody = result.data;
             if (responseBody.result === 'patient') {
-                window.location.href = 'patientPortal.html';
+                window.location.href = 'patient_portal.html';
             } else if (responseBody.result === 'doctor') {
-                window.location.href = 'doctorPortal.html';
+                window.location.href = 'doctor_portal.html';
             } else {
                 alert('Invalid username or password. Please try again.');
             }
@@ -133,6 +133,8 @@ document.getElementById("loginForm").addEventListener("submit", function (event)
 
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
+    
+    localStorage.setItem('user_id', JSON.stringify(username));
 
     login(username, password);
 });

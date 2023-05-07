@@ -90,14 +90,17 @@
     var apigClient = apigClientFactory.newClient();
 
     function getDoctorAvailability() {
-        const doctorId = $("#doctor_id").val();
+//         const doctorId = $("#doctor_id").val();
         const date = $("#date").val();
         console.log("date", date)
+        
+        var doctorId = document.getElementById(“doctor_id");
+        doctorId.value = localStorage.getItem('selectedDoctorId');
 
-        var input = document.getElementById("patient_id");
-        input.value = localStorage.getItem('user_id');
+        var patientId = document.getElementById("patient_id");
+        patientId.value = localStorage.getItem('user_id');
         var params = {
-            'doctorId': localStorage.getItem('selectedDoctorId')
+            'doctorId': doctorId
         };
 
         var additionalParams = {

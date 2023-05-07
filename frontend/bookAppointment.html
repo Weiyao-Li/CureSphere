@@ -1,176 +1,201 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Book Appointment</title>
-  <!-- include jQuery library -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- include jQuery UI library -->
-  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-  <style>
-    label {
-      display: inline-block;
-      width: 100px;
-      text-align: right;
-      margin-right: 10px;
-    }
-    input[type="text"], select {
-      width: 200px;
-      padding: 5px;
-      margin-bottom: 10px;
-    }
-    select {
-      width: 210px;
-    }
-    button {
-      background-color: green;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-    }
-  </style>
+    <title>Book Appointment</title>
+    <!-- include jQuery library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- include jQuery UI library -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <style>
+        label {
+            display: inline-block;
+            width: 100px;
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        input[type="text"], select {
+            width: 200px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 215px;
+        }
+
+        button {
+            background-color: green;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Book Appointment</h1>
-  <div>
+<h1>Book Appointment</h1>
+<div>
     <label for="doctor_id">Doctor ID:</label>
-    <input type="text" id="doctor_id" value="12345" readonly>
-  </div>
-  <div>
+    <input type="text" id="doctor_id" value="shwetha97@gmail.com" readonly>
+</div>
+<div>
     <label for="patient_id">Patient ID:</label>
-    <input type="text" id="patient_id" value="67890" readonly>
-  </div>
-  <div>
+    <input type="text" id="patient_id" value="shwetha97@gmail.com" readonly>
+</div>
+<div>
     <label for="date">Date:</label>
     <input type="text" id="date" placeholder="Select a date">
-  </div>
-  <div>
+</div>
+<div>
     <label for="day">Day:</label>
-    <select id="day"></select>
-  </div>
-  <div>
+    <input type="text" id="day">
+</div>
+<div>
     <label for="slot">Slot:</label>
     <select id="slot"></select>
-  </div>
-  <br>
-  <br>
-  <button id="book_btn">Book Appointment</button>
-  <script>
+</div>
+<br>
+<br>
+<button id="book_btn">Book Appointment</button>
+<br>
+<br>
+<br>
+<div id="message" style="display: none;"></div>
+
+<script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+<script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
+
+<script type="text/javascript">
     // initialize datepicker widget
-    $(document).ready(function() {
-      $("#date").datepicker();
+    $(document).ready(function () {
+        $("#date").datepicker({
+            minDate: 0,
+            onSelect: function () {
+                getDoctorAvailability();
+            }
+        });
     });
 
-    // add event listener to date field to call getDoctorAvailability() function
-    const dateInput = document.getElementById("date");
-    dateInput.addEventListener("change", getDoctorAvailability);
+    var apigClient = apigClientFactory.newClient();
 
     function getDoctorAvailability() {
-      const date = $("#date").val();
-      $.ajax({
-        url: "getDoctorAvailability.php",
-        type: "GET",
-        data: { date: date },
-        success: function(response) {
-          const days = JSON.parse(response);
-          populateDays(days);
-          populateSlots(days[0].slots);
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-          console.error("Error:", textStatus, errorThrown);
-        }
-      });
-    }
-
-    function populateDays(days) {
-      const daySelect = document.getElementById("day");
-      daySelect.innerHTML = "";
-      for (let day of days) {
-        const option = document.createElement("option");
-        option.value = day.day;
-        option.text = day.day;
-        daySelect.add(option);
-      }
-      const firstDay = days[0].day;
-      populateSlots(days[0].slots);
-    }
-
-    function populateSlots(slots) {
-      const slotSelect = document.getElementById("slot");
-      slotSelect.innerHTML = "";
-      for (let slot of slots) {
-        const option = document.createElement("option");
-        option.value = slot;
-        option.text = slot;
-        slotSelect.add(option);
-      }
-          // add event listener to book appointment button to call bookAppointment() function
-    const bookBtn = document.getElementById("book_btn");
-    bookBtn.addEventListener("click", bookAppointment);
-
-    // function bookAppointment() {
-    //   const doctorId = $("#doctor_id").val();
-    //   const patientId = $("#patient_id").val();
-    //   const date = $("#date").val();
-    //   const day = $("#day").val();
-    //   const slot = $("#slot").val();
-    //
-    //   $.ajax({
-    //     url: "bookAppointment.php",
-    //     type: "POST",
-    //     headers: {
-    //       "Doctor-ID": doctorId,
-    //       "Patient-ID": patientId,
-    //       "Date": date,
-    //       "Day": day,
-    //       "Slot": slot
-    //     },
-    //     success: function(response) {
-    //       console.log(response);
-    //       alert("Appointment booked successfully!");
-    //     },
-    //     error: function(jqXHR, textStatus, errorThrown) {
-    //       console.error("Error:", textStatus, errorThrown);
-    //       alert("Failed to book appointment. Please try again.");
-    //     }
-    //   });
-    // }}
-    var apigClient = apigClientFactory.newClient();
-    function bookAppointment() {
         const doctorId = $("#doctor_id").val();
-        const patientId = $("#patient_id").val();
         const date = $("#date").val();
-        const day = $("#day").val();
-        const slot = $("#slot").val();
-
+        console.log("date", date)
         var params = {
-			headers:{
-              'doctorId' : doctorId,
-              'patientId' : patientId,
-              'date' : date,
-              'day' : day,
-              'slot' : slot
-			}
+            'doctorId': doctorId
         };
 
         var additionalParams = {
-          headers: {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': '*',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+            },
+            queryParams: {
+                'date': date
+            }
+        };
+
+        apigClient.getDoctorAvailabilityGet(params, {}, additionalParams)
+            .then(function (result) {
+                console.log("Doctor availability obtained: ", result);
+                // Call the populateDayAndSlots function with the result data
+                populateDayAndSlots(result.data);
+
+            }).catch(function (result) {
+            console.log("Failed to get doctor availability: ", result);
+            if (result.status === 400) {
+                // Clear the Day and Slots fields
+                clearDayAndSlots();
+                // Display the 'Booking Unavailable' message
+                alert('Booking Unavailable');
+            }
+        });
+    }
+
+    function clearDayAndSlots() {
+        const dayInput = $("#day");
+        const slotSelect = $("#slot");
+
+        // Clear day input field
+        dayInput.val('');
+
+        // Clear slot dropdown
+        slotSelect.empty();
+    }
+
+    function populateDayAndSlots(data) {
+        const dayInput = $("#day");
+        const slotSelect = $("#slot");
+
+        // Populate day input field
+        dayInput.val(data.Day);
+
+        // Populate slot dropdown
+        data.Slots.forEach(slot => {
+            const slotOption = $("<option></option>");
+            slotOption.text(slot);
+            slotOption.val(slot);
+            slotSelect.append(slotOption);
+        });
+    }
+
+    // add event listener to book appointment button to call bookAppointment() function
+    const bookBtn = document.getElementById("book_btn");
+    bookBtn.addEventListener("click", bookAppointment);
+
+    function bookAppointment() {
+    const doctorId = $("#doctor_id").val();
+    const patientId = $("#patient_id").val();
+    const date = $("#date").val();
+    const slot = $("#slot").val();
+
+    var params = {
+        'doctorId': doctorId,
+        'patientId': patientId
+    };
+
+    var additionalParams = {
+        headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Headers': '*',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': '*',
-          }
-        };
+        },
+        queryParams: {
+            'Date': date,
+            'Time': slot
+        }
+    };
 
-        apigClient.bookAppointmentOptions(params, {}, additionalParams)
-            .then(function(result) {
-                console.log("Appointment successfully booked! : ", result);
+    apigClient.bookAppointmentPost(params, {}, additionalParams)
+        .then(function(result) {
+            console.log("Appointment successfully booked! : ", result);
+            showMessage('Appointment Successfully Booked! Thank You!', 'green');
+        }).catch(function(result) {
+            console.log("Failed to book appointment: ", result);
+        });
+}
 
-            }).catch(function(result) {
-                console.log("Failed to book appointment: ", result);
-            });
-    }}
-  </script>
+function showMessage(message, color) {
+    const messageDiv = $('#message');
+    messageDiv.text(message);
+    messageDiv.css('color', color);
+    messageDiv.show();
+}
+</script>
 </body>
 </html>

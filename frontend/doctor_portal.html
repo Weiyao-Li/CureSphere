@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Submit</title>
+	<link rel="stylesheet" href="style.css">
+	<a href="index.html"> Go Back to Main </a>
+	
+</head>
+
+<body>
+	<div class="container">
+
+		<section class="section">
+			<div class="section-header">
+				<h2>Personal Information</h2>
+			</div>
+
+			<div class="row">
+		    	<div id="search_results_user_info">
+		    </div>  
+
+		</section>
+
+		<section class="section">
+			<div class="section-header">
+				<h2>Current Appointments</h2>
+				<a href="doctor_submit.html"> <button class="btn" id="submit">Submit Medicine/Feedback</button> </a>
+			</div>
+
+			<div class="row">
+		    	<div id="search_results">
+		    </div>
+		</section>
+
+        <section class="section">
+			<div class="section-header">
+				<h2>Past Appointments</h2>
+				<a href="doctor_pastAppointment.html"> <button class="btn" id="more-info">More Info</button> </a>
+			</div>
+		</section>
+    </div>
+        
+    		<script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
+
+<script type = "text/javascript">
+    var apigClient = apigClientFactory.newClient();
+
+	window.onload = function() {
+		getUserInfo();
+		getCurrAppointment();
+	};
+
+	function getUserInfo() {
+        //TODO : get user_id, change the codes below
+        //var user_id = "wl2872@columbia.edu"
+		var user_id = localStorage.getItem('user_id')
+    	user_id = JSON.parse(user_id)
+    	console.log("user_id : ", user_id)
+
+        var params = {
+				'id' : user_id,
+        };
+        
+        var additionalParams = {
+          headers: {
+            'Content-Type': 'application/json',
+			'Access-Control-Allow-Headers': '*',
+      		'Access-Control-Allow-Origin': '*',
+      		'Access-Control-Allow-Methods': '*',
+          }
+        };
+        
+        apigClient.doctorsIdGet(params, {}, additionalParams)
+            .then(function(result) {
+                console.log("Search Result : ", result['data']['Doctor']);
+
+				var user_info = result['data']['Doctor']
+
+				//parse info
+				var user_id = user_info['email']
+				var firstName = user_info['firstName']
+				var lastName = user_info['lastName']
+				var department = user_info['department']
+				var specialties = user_info['specialties']
+				var city = user_info['city']
+				var clinic_zip_code = user_info['clinic_zip_code']
+
+				var search_result_html = document.getElementById("search_results_user_info");
+				search_result_html.innerHTML = '<table class="table"><tr><th>Role</th><td id="role">Doctor</td></tr><tr><th>Email (user_id)</th><td>' 
+					+ user_id + '</td></tr><tr><th>First Name</th><td>' + firstName + '</td></tr><tr><th>Last Name</th><td>'+lastName 
+					+ '</td></tr><tr><th>Department</th><td>' + department + '</td></tr><tr><th>Specialties</th><td>'+specialties
+					+'</td></tr><tr><th>City</th><td>'+city+ '</td></tr><tr><th>Clinic Zip Code</th><td>'+clinic_zip_code +'</td></tr></table>';
+				
+            }).catch(function(error) {
+                console.error(error);
+            });
+    }
+
+    function getCurrAppointment() {
+        //TODO : get user_id -> change the code below
+        //var user_id = "wl2872@columbia.edu"
+		var user_id = localStorage.getItem('user_id')
+    	user_id = JSON.parse(user_id)
+    	console.log("user_id : ", user_id)
+		
+        var user_role = "doctor"
+        var appointment_type = "curr"
+
+        var params = {
+				'role' : user_role,
+				'appointment_type' : appointment_type,
+				'email' : user_id
+        };
+        
+        var additionalParams = {
+          headers: {
+            'Content-Type': 'application/json',
+			'Access-Control-Allow-Headers': '*',
+      		'Access-Control-Allow-Origin': '*',
+      		'Access-Control-Allow-Methods': '*',
+          }
+        };
+        
+        apigClient.getAppointmentGet(params, {}, additionalParams)
+            .then(function(result) {
+                console.log("Search Result : ", result);
+				console.log("curr app : ", result['data']['current_appointments'])
+
+				var appointments = result['data']['current_appointments']
+				var i;
+
+				var search_result_html_cur = document.getElementById("search_results");
+				search_result_html_cur.innerHTML = "";
+
+          		for (i=0; i<appointments.length; i++) {
+					patientId = appointments[i]['patientId']
+					date = appointments[i]['date']
+					time = appointments[i]['time']
+						
+					
+						
+					search_result_html_cur.innerHTML = search_result_html_cur.innerHTML + 
+					'<table class="table"><tr><th>Patient email</th><td>' + patientId + '</td></tr><tr><th>Date</th><td>' 
+					+ date + '</td></tr><tr><th>Time</th><td>' + time + '</td></tr></table>';
+          		}
+      
+            }).catch(function(result) {
+                console.log(result);
+            });
+    }
+
+</script>
+
+	
+</body>
+</html>

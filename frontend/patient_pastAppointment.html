@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient Past Appointments</title>
+	<link rel="stylesheet" href="style.css">
+	<a href="index.html"> Go Back to Main </a>
+    <br>
+    <a href="patient_portal.html"> Go Back to Portal </a>
+
+</head>
+
+<body>
+	<div class="container">
+
+        <section class="section">
+			<div class="section-header">
+				<h2>Past Appointments</h2>
+			</div>
+			
+			<div class="row">
+		    	<div id="search_results">
+		    </div>            
+		</section>
+
+    </div>
+
+		<script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+		<script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
+	
+	<script type = "text/javascript">
+		var apigClient = apigClientFactory.newClient();
+	
+		window.onload = function() {
+			//Code to be executed when the page loads
+			//alert("Page loaded!");
+			getPastAppointment();
+		};
+
+		function getPastAppointment() {
+			//TODO : get user_id -> change the code below
+			//var user_id = "shwetha97@gmail.com"
+			var user_id = localStorage.getItem('user_id')
+    		user_id = JSON.parse(user_id)
+    		console.log("user_id : ", user_id)
+			
+			var user_role = "patient"
+			var appointment_type = "past"
+	
+			var params = {
+					'role' : user_role,
+					'appointment_type' : appointment_type,
+					'email' : user_id
+			};
+			
+			var additionalParams = {
+			  headers: {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Headers': '*',
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': '*',
+			  }
+			};
+			
+			apigClient.getAppointmentGet(params, {}, additionalParams)
+				.then(function(result) {
+					console.log("Search Result : ", result);
+					console.log(result['data']['past_appointments'])
+					var appointments = result['data']['past_appointments']
+					var i;
+
+					var search_result_html = document.getElementById("search_results");
+					search_result_html.innerHTML = "";
+
+          			for (i=0; i<appointments.length; i++) {
+
+						doctorId = appointments[i]['doctorId']
+						date = appointments[i]['date']
+						time = appointments[i]['time']
+						medicine = appointments[i]['medicine']
+						feedback = appointments[i]['feedback']
+
+						
+              			search_result_html.innerHTML = search_result_html.innerHTML + 
+						'<table class="table"><tr><th>Doctor email</th><td id="doctor">' + doctorId + '</td></tr><tr><th>Date</th><td id="date">' 
+							+ date + '</td></tr><tr><th>Time</th><td id="time">' + time + '</td></tr><tr><th>Medicine</th><td id="medicine">' 
+							+ medicine + '</td></tr><tr><th>Feedback</th><td id="feedback">'+ feedback + '</td></tr><tr><th>Action</th>'
+							+ '<td><a href="medicineComparison.html">'
+							+ '<button class="btn" id="price" onclick= "setName(\'' + medicine + '\')">Price Comparison</button>'
+							+ '</a></td></tr>'
+							+'</table>';
+          				}
+		  
+				}).catch(function(error) {
+					console.error(error);
+				});
+		}
+
+	function setName(medicine){
+		localStorage.setItem('medicine', JSON.stringify(medicine));
+	}
+
+	</script>
+
+</body>
+</html>
+			

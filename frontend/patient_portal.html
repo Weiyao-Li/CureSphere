@@ -62,7 +62,10 @@
 
 	function getUserInfo() {
         //TODO : get user_id, change the codes below
-        var user_id = "shwetha97@gmail.com"
+        //var user_id = "shwetha97@gmail.com"
+	var user_id = localStorage.getItem('user_id')
+    	user_id = JSON.parse(user_id)
+    	console.log("user_id : ", user_id)
 
         var params = {
 				'id' : user_id,
@@ -106,7 +109,7 @@
     function getCurrAppointment() {
         //TODO : get user_id -> change the code below
         //var user_id = "shwetha97@gmail.com"
-		var user_id = localStorage.getItem('user_id')
+	var user_id = localStorage.getItem('user_id')
     	user_id = JSON.parse(user_id)
     	console.log("user_id : ", user_id)
 		

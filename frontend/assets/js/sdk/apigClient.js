@@ -270,7 +270,7 @@ apigClientFactory.newClient = function (config) {
         
         var doctorsIdGetRequest = {
             verb: 'get'.toUpperCase(),
-            path: (pathComponent + uritemplate('/doctors/{id}').expand(apiGateway.core.utils.parseParametersToObject(params, ['id']))).replace("%40", "@"),
+            path: pathComponent + uritemplate('/doctors/{id}').expand(apiGateway.core.utils.parseParametersToObject(params, ['id'])).replace("%40", "@"),
             headers: apiGateway.core.utils.parseParametersToObject(params, []),
             queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
             body: body
@@ -450,7 +450,7 @@ apigClientFactory.newClient = function (config) {
         
         var patientsIdGetRequest = {
             verb: 'get'.toUpperCase(),
-            path: (pathComponent + uritemplate('/patients/{id}').expand(apiGateway.core.utils.parseParametersToObject(params, ['id']))).replace("%40", "@"),
+            path: pathComponent + uritemplate('/patients/{id}').expand(apiGateway.core.utils.parseParametersToObject(params, ['id'])).replace("%40", "@"),
             headers: apiGateway.core.utils.parseParametersToObject(params, []),
             queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
             body: body

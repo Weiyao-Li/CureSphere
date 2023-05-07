@@ -3,6 +3,7 @@ import os
 import boto3
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
+from datetime import datetime
 import time
 
 REGION = 'us-east-1'
@@ -81,11 +82,13 @@ def lambda_handler(event, context):
     results = client.get(index = INDEX, id = r_id)
     print("after update results : ", results)
     
+    update_doctor_slot_to_free(doctorId, date, time)
+    
     return {
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': '*',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': '*',
         },
@@ -154,6 +157,33 @@ def query_id(term):
     for hit in hits:
         results.append(hit['_id'])
     return results
+
+def update_doctor_slot_to_free(doctor_id, date, time):
+    dynamodb = boto3.resource('dynamodb')
+    doctors_table = dynamodb.Table('doctors')
+    
+    date_obj = datetime.strptime(date, '%m/%d/%Y')
+    day_for_date = date_obj.strftime('%A')
+    
+    response = doctors_table.get_item(Key={'doctor_id': doctor_id})
+    doctor = response['Item']
+    availability_windows = doctor['windows']
+    
+    for day_dict in availability_windows:
+        if day_for_date in day_dict:
+            for slot in day_dict[day_for_date]:
+                if time in slot:
+                    slot[time] = 'free'
+                    break
+    
+    update_expression = 'SET windows = :windows'
+    expression_attribute_values = {':windows': availability_windows}
+    
+    doctors_table.update_item(
+        Key={'doctor_id': doctor_id},
+        UpdateExpression=update_expression,
+        ExpressionAttributeValues=expression_attribute_values
+    )
 
 def get_awsauth(region, service):
     cred = boto3.Session().get_credentials()

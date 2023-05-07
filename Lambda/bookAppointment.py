@@ -10,6 +10,7 @@ from requests_aws4auth import AWS4Auth
 from botocore.vendored import requests
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
+from datetime import datetime
 
 REGION = 'us-east-1'
 HOST = 'search-appointments-ijrmccfpodio2x2fsobemencsu.us-east-1.es.amazonaws.com'
@@ -33,10 +34,10 @@ def post_to_elastic_search(appointment_details):
 def lambda_handler(event, context):
     print(event)
     # Extracting relevant info from the event
-    patientId = event['headers']['patientId']
-    doctorId = event['headers']['doctorId']
-    timeInput = event['headers']['Time']
-    date = event['headers']['Date']
+    patientId = event['headers']['patientid']
+    doctorId = event['headers']['doctorid']
+    timeInput = event['queryStringParameters']['Time']
+    date = event['queryStringParameters']['Date']
 
     timeInput = str(timeInput)
     date = str(date)
@@ -108,12 +109,38 @@ def lambda_handler(event, context):
 
     # Post appointment details to Elasticsearch
     post_to_elastic_search(appointment_details)
-
+    
+    # Find the matching day and time slot, then update it to 'taken'
+    availability_windows = doctor['windows']
+    date_obj = datetime.strptime(date, '%m/%d/%Y')
+    day_of_week = date_obj.strftime('%A')
+    
+    for day_dict in availability_windows:
+        if day_dict.get(day_of_week) is not None:
+            slots = day_dict[day_of_week]
+            for slot_obj in slots:
+                slot_time, status = list(slot_obj.items())[0]
+                if timeInput == slot_time and status == 'free':
+                    slot_obj[slot_time] = 'taken'
+                    break
+    
+    # Update the doctor's availability in the original doctor object
+    doctor['windows'] = availability_windows
+    
+    # Update the doctor's availability in DynamoDB
+    doctor_table.update_item(
+        Key={'doctor_id': doctorId},
+        UpdateExpression="SET windows = :windows",
+        ExpressionAttributeValues={
+            ":windows": doctor['windows']
+        }
+    )
+    
     return {
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': '*',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': '*',
         },

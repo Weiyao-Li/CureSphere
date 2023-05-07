@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Doctor Portal</title>
+	<link rel="stylesheet" href="style.css">
+	<a href="index.html"> Go Back to Main </a>
+	<br>
+    <a href="doctor_portal.html"> Go Back to Portal </a>
+	
+	
+</head>
+
+<body>
+	<div class="container">
+
+		<section class="section">
+			<div class="section-header">
+				<h2>Medicine/Feedback Submit Form</h2>
+			</div>
+
+			<div class="row">
+		    	<div id="search_results">
+		    </div>
+		</section>
+
+    </div>
+
+        
+    <script type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
+    <script type="text/javascript" src="lib/url-template/url-template.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
+    <script type="text/javascript" src="apigClient.js"></script>
+
+<script type = "text/javascript">
+    var apigClient = apigClientFactory.newClient();
+
+	window.onload = function() {
+		getCurrAppointment();
+	};
+
+	function submit(a_id, i){
+
+		var medicine = document.getElementById("medicine"+i.toString()).value;
+		var feedback = document.getElementById("feedback"+i.toString()).value;
+
+		var params = {
+			'a_id' : a_id,
+			'feedback' : feedback,
+			'medicine' : medicine
+		};
+	
+		var additionalParams = {
+	  	headers: {
+		'Content-Type': 'application/json',
+		'Access-Control-Allow-Headers': '*',
+		'Access-Control-Allow-Origin': '*',
+		'Access-Control-Allow-Methods': '*',
+	  	}
+		};
+	
+		apigClient.doctorInputPost(params, {}, additionalParams)
+			.then(function(result) {
+				console.log("Result : ", result);
+			}).catch(function(result) {
+				console.log(result);
+			});
+	}
+
+
+    function getCurrAppointment() {
+        //TODO : get user_id -> change the code below
+        //var user_id = "wl2872@columbia.edu"
+		var user_id = localStorage.getItem('user_id')
+    	user_id = JSON.parse(user_id)
+    	console.log("user_id : ", user_id)
+        var user_role = "doctor"
+        var appointment_type = "curr"
+
+        var params = {
+				'role' : user_role,
+				'appointment_type' : appointment_type,
+				'email' : user_id
+        };
+        
+        var additionalParams = {
+          headers: {
+            'Content-Type': 'application/json',
+			'Access-Control-Allow-Headers': '*',
+      		'Access-Control-Allow-Origin': '*',
+      		'Access-Control-Allow-Methods': '*',
+          }
+        };
+        
+        apigClient.getAppointmentGet(params, {}, additionalParams)
+            .then(function(result) {
+                console.log("Search Result : ", result);
+				console.log("curr app : ", result['data']['current_appointments'])
+
+				var appointments = result['data']['current_appointments']
+				var i;
+
+				var search_result_html_cur = document.getElementById("search_results");
+			
+				search_result_html_cur.innerHTML = "";
+
+					for (i=0; i<appointments.length; i++) {
+						appointmentId = appointments[i]['appointmentId'];
+						patientId = appointments[i]['patientId'];
+						date = appointments[i]['date'];
+						time = appointments[i]['time'];
+
+						search_result_html_cur.innerHTML = search_result_html_cur.innerHTML + 
+						'<table class="table"><tr><th>Patient email</th><td>' + patientId + '</td></tr><tr><th>Date</th><td id="date">' 
+						+ date + '</td></tr><tr><th>Time</th><td id="time">' + time + '</td></tr><tr><th>Medicine</th>'+
+						'<td><input type="text" id="medicine' + i.toString() + '"></td></tr><tr><th>Feedback</th><td>' +
+						'<textarea id="feedback' + i.toString() + '"></textarea></td></tr><tr><th>Action</th><td>'
+						+ '<button class="btn" onclick= "submit(\'' + appointmentId + '\', \'' + i + '\')">Submit</button>'
+						+'</td></tr></table>';
+
+						
+					}
+					
+					
+      
+            }).catch(function(result) {
+                console.log(result);
+            });
+    }
+
+</script>
+
+	
+</body>
+</html>

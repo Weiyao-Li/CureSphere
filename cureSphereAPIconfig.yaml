@@ -518,6 +518,83 @@ paths:
             properties:
               error:
                 type: string
+  
+  /getDoctorAvailability:
+    get:
+      description: get availability of doctor
+      operationId: getDoctorAvailability
+      parameters:
+        - name: doctorId
+          in: header
+          description: the unique doctorId
+          required: true
+          type: string
+          
+        - name: date
+          in: header
+          description: Date in format mm/dd/yyyy
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully obtained doctor availability
+          schema:
+            type: object
+            properties:
+              appointmentId:
+                type: string
+        '400':
+          description: Invalid input, doctor unavailable
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+  /login:
+    post:
+      summary: Handles the login from frontend
+      description: Checks patient and doctors table for a matching user
+      operationId: login
+      parameters:
+        - name: username
+          in: header
+          description: The username of the frontend user.
+          required: true
+          type: string
+        - name: password
+          in: header
+          description: The password of the frontend user.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Successfully found a matching user
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+        '400':
+          description: Error in finding patient/doctor
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+        '500':
+          description: Internal server error
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
 
 definitions:
     UnstructuredMessage:

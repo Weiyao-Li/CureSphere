@@ -245,6 +245,9 @@ function registerDoctor(event) {
             if (error.status === 400) {
                 alert("Failed to register doctor.");
             }
+            if (error.status === 404) {
+                alert("[404] Username already exists.");
+            }
             // alert("An error occurred while registering the doctor. Please try again.");
         });
 }
@@ -295,6 +298,9 @@ function registerPatient(event) {
             console.error("Error registering patient:", error);
             if (error.status === 400) {
                 alert("Failed to register patient.");
+            }
+            if (error.status === 404) {
+                alert("[404] Username already exists.");
             }
             // alert("An error occurred while registering the patient. Please try again.");
         });

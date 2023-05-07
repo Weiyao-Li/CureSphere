@@ -338,13 +338,13 @@ apigClientFactory.newClient = function (config) {
     apigClient.getDoctorAvailabilityGet = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['doctorId', 'date'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['doctorId'], ['body']);
         
         var getDoctorAvailabilityGetRequest = {
             verb: 'get'.toUpperCase(),
             path: pathComponent + uritemplate('/getDoctorAvailability').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
-            headers: apiGateway.core.utils.parseParametersToObject(params, ['doctorId', 'date']),
-            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
+            headers: apiGateway.core.utils.parseParametersToObject(params, ['doctorId']),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, ['date']),
             body: body
         };
         

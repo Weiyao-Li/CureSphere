@@ -1,35 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Include the Amazon Cognito SDK -->
-  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
-  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.879.0.min.js"></script>
-<!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/amazon-cognito-identity-js/4.6.0/aws-cognito-sdk.min.js"></script>-->
-<!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/amazon-cognito-identity-js/4.6.0/amazon-cognito-identity.min.js"></script>-->
-  <!-- Include the auth.js file -->
-  <script src="auth.js"></script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login and Signup</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login and Register</title>
+    <script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+    <script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
+    <script type="text/javascript" src="assets/js/login.js" defer></script>
+    <style>
+        form {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <!-- Add a form with fields for username and password -->
-  <form id="authForm">
-    <h3>Login or Signup</h3>
-    <label>Email:</label>
-    <input type="email" id="email" required>
-    <br>
-    <label>Password:</label>
-    <input type="password" id="password" required>
-    <br>
-    <label>User Type:</label>
-    <select id="userType">
-      <option value="doctor">Doctor</option>
-      <option value="patient">Patient</option>
-    </select>
-    <br>
-    <button type="button" onclick="signIn()">Login</button>
-    <button type="button" onclick="signUp()">Signup</button>
-  </form>
+    <h1>Login and Register</h1>
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn">Register</button>
+
+    <form id="loginForm">
+        <h2>Login</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username">
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password">
+        <br>
+        <button type="submit">Login</button>
+    </form>
+
+    <form id="registerForm">
+        <h2>Register</h2>
+        <button type="button" id="registerDoctorBtn">Register a Doctor</button>
+        <button type="button" id="registerPatientBtn">Register a Patient</button>
+    </form>
+
+    <form id="doctorForm">
+        <h2>Register a Doctor</h2>
+        <label for="doctorUsername">Username[Email]:</label>
+        <input type="text" id="doctorUsername" name="doctorUsername">
+        <br>
+        <label for="doctorPassword">Password:</label>
+        <input type="password" id="doctorPassword" name="doctorPassword">
+        <br>
+        <label for="doctorFirstName">First Name:</label>
+        <input type="text" id="doctorFirstName" name="doctorFirstName">
+        <br>
+        <label for="doctorLastName">Last Name:</label>
+        <input type="text" id="doctorLastName" name="doctorLastName">
+        <br>
+        <label for="days">Available Days:</label>
+        <div class="day">
+            <input type="checkbox" id="monday" name="days" value="Monday"> Monday
+            <select id="mondayStart" class="startTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <select id="mondayEnd" class="endTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <input type="checkbox" id="tuesday" name="days" value="Tuesday"> Tuesday
+            <select id="tuesdayStart" class="startTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <select id="tuesdayEnd" class="endTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <input type="checkbox" id="wednesday" name="days" value="Wednesday"> Wednesday
+            <select id="wednesdayStart" class="startTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <select id="wednesdayEnd" class="endTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <input type="checkbox" id="thursday" name="days" value="Thursday"> Thursday
+            <select id="thursdayStart" class="startTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <select id="thursdayEnd" class="endTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <input type="checkbox" id="friday" name="days" value="Friday"> Friday
+            <select id="fridayStart" class="startTime" disabled>
+                <!-- (time options) -->
+            </select>
+            <select id="fridayEnd" class="endTime" disabled>
+                <!-- (time options) -->
+            </select>
+        </div>
+        <br>
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city">
+        <br>
+        <label for="doctorZipCode">Zip Code:</label>
+        <input type="text" id="doctorZipCode" name="doctorZipCode">
+        <br>
+        <label for="department">Department:</label>
+        <input type="text" id="department" name="department">
+        <br>
+        <label for="specialty">Specialty:</label>
+        <input type="text" id="specialty" name="specialty">
+        <br>
+        <button type="submit">Register</button>
+    </form>
+
+    <form id="patientForm">
+        <h2>Register a Patient</h2>
+        <label for="patientUsername">Username[Email]:</label>
+        <input type="text" id="patientUsername" name="patientUsername">
+        <br>
+        <label for="patientPassword">Password:</label>
+        <input type="password" id="patientPassword" name="patientPassword">
+        <br>
+        <label for="patientFirstName">First Name:</label>
+        <input type="text" id="patientFirstName" name="patientFirstName">
+        <br>
+        <label for="patientLastName">Last Name:</label>
+        <input type="text" id="patientLastName" name="patientLastName">
+        <br>
+        <label for="patientCity">City:</label>
+        <input type="text" id="patientCity" name="patientCity">
+        <br>
+        <label for="patientZipCode">Zip Code:</label>
+        <input type="number" id="patientZipCode" name="patientZipCode">
+        <br>
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" min="1" max="120">
+        <br>
+        <label for="gender">Gender:</label>
+        <select id="gender" name="gender">
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="other">Other</option>
+        </select>
+        <br>
+        <label for="insuranceProvider">Insurance Provider:</label>
+        <input type="text" id="insuranceProvider" name="insuranceProvider">
+        <br>
+        <button type="submit">Register</button>
+    </form>
+
+
+    <script>
+        document.getElementById("loginBtn").addEventListener("click", function() {
+            document.getElementById("loginForm").style.display = "block";
+            document.getElementById("registerForm").style.display = "none";
+        });
+
+        document.getElementById("registerBtn").addEventListener("click", function() {
+            document.getElementById("registerForm").style.display = "block";
+            document.getElementById("loginForm").style.display = "none";
+        });
+
+        document.getElementById("registerDoctorBtn").addEventListener("click", function() {
+            document.getElementById("doctorForm").style.display = "block";
+            document.getElementById("patientForm").style.display = "none";
+        });
+
+        document.getElementById("registerPatientBtn").addEventListener("click", function() {
+            document.getElementById("patientForm").style.display = "block";
+            document.getElementById("doctorForm").style.display = "none";
+        });
+    </script>
 </body>
 </html>

@@ -49,6 +49,8 @@ function login(username, password) {
                 alert('Invalid username or password. Please try again.');
             }
         }).catch(function (result) {
+            // create an alert that says that user is not found
+            alert('Invalid username or password. Please try again.');
         console.log("Failed to find a doctor/patient user: ", result);
         if (result.status === 400) {
             alert('Logging failed!')

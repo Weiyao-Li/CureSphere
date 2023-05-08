@@ -42,9 +42,11 @@ function login(username, password) {
             console.log('Login result: ', result);
             let responseBody = result.data;
             if (responseBody.result === 'patient') {
-                window.location.href = 'patient_portal.html';
+                localStorage.setItem('role', JSON.stringify("patient"));
+                window.location.href = '../patient_portal.html';
             } else if (responseBody.result === 'doctor') {
-                window.location.href = 'doctor_portal.html';
+                localStorage.setItem('role', JSON.stringify("doctor"));
+                window.location.href = '../doctor_portal.html';
             } else {
                 alert('Invalid username or password. Please try again.');
             }
@@ -237,10 +239,10 @@ function registerDoctor(event) {
 
     apigClient.createDoctorPost(params, data, additionalParams)
         .then((result) => {
-            if (result.success) {
-                window.location.href = 'login.html';
-                // alert("Doctor registered successfully!");
-            }
+            console.log('redirecting..');
+            redirectLogin();
+            // window.location.href = '../../login.html'
+            // alert("Doctor registered successfully!");
         })
         .catch((error) => {
             console.error("Error registering doctor:", error);
@@ -254,6 +256,9 @@ function registerDoctor(event) {
         });
 }
 
+function redirectLogin() {
+  window.location.href = "../login.html";
+}
 
 document.getElementById("doctorForm").addEventListener("submit", registerDoctor);
 
@@ -292,7 +297,8 @@ function registerPatient(event) {
     apigClient.createPatientPost(params, data, additionalParams)
         .then((result) => {
             if (result.status === 200) {
-                window.location.href = 'login.html';
+                // window.location.href = '../login.html';
+                redirectLogin();
                 // alert("Patient registered successfully!");
             }
         })

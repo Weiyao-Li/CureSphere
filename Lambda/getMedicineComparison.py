@@ -59,19 +59,39 @@ def lambda_handler(event, context):
 
     if medicine_name:
         comparison_result = get_medicine_comparison(medicine_name)
+        comp_result_update = json.dumps(comparison_result, cls=DecimalEncoder)
+        print(comp_result_update)
 
         if comparison_result:
             return {
                 'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Headers': '*',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': '*',
+                },
                 'body': json.dumps(comparison_result, cls=DecimalEncoder)
             }
         else:
             return {
                 'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Headers': '*',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': '*',
+                },
                 'body': json.dumps({"message": "No medicine data found in the database."})
             }
     else:
         return {
             'statusCode': 404,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': '*',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+            },
             'body': json.dumps({"message": "No latest medicine name found for the given appointmentId."})
         }

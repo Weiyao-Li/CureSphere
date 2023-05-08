@@ -12,15 +12,15 @@
 <div id="medicine-container">
     <table>
         <thead>
-            <tr>
-                <th>Seller Name</th>
-                <th>Medicine Name</th>
-                <th>Price</th>
-                <th>Zip Code</th>
-            </tr>
+        <tr>
+            <th>Seller Name</th>
+            <th>Medicine Name</th>
+            <th>Price</th>
+            <th>Zip Code</th>
+        </tr>
         </thead>
         <tbody id="medicine-table-body">
-            <!-- Medicine data will be displayed here -->
+        <!-- Medicine data will be displayed here -->
         </tbody>
     </table>
 </div>
@@ -28,8 +28,87 @@
 
 <!-- Include jQuery library -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<!-- Include your displayDoctors.js -->
-<script src="assets/js/medicine_comparison.js"></script>
+<!-- Include the API Gateway SDK -->
 
+<script type="text/javascript" src="assets/js/sdk/lib/axios/dist/axios.standalone.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/rollups/sha256.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/hmac.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/CryptoJS/components/enc-base64.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/url-template/url-template.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+<script type="text/javascript" src="assets/js/sdk/lib/apiGatewayCore/utils.js"></script>
+<script type="text/javascript" src="assets/js/sdk/apigClient.js"></script>
+
+<!-- Include your medicine_comparison.js -->
+<!--<script src="assets/js/medicine_comparison.js"></script>-->
+<script type="text/javascript">
+
+    var apigClient = apigClientFactory.newClient();
+
+    window.onload = function () {
+        var medicine = localStorage.getItem("medicine")
+        // const parsed_medicine = JSON.parse(medicine);
+        var parsed_medicine = "BoneStrength"
+        console.log("medicine : ", parsed_medicine);
+        //getMedicineComparison(parsed_medicine, apigClient);
+
+        var params = {
+            'medicineName': parsed_medicine
+        };
+
+        var additionalParams = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Headers': '*',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+            }
+        };
+
+
+        apigClient
+            .getMedicineComparisonGet(params, {}, additionalParams)
+            .then((response) => {
+                displayMedicineData(response.data);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+
+    };
+    //  $(document).ready(function () {
+
+
+    // Initialize the API Gateway SDK
+    //const apigClient = apigClientFactory.newClient();
+
+    // Call the API
+
+    // });
+
+    // function getMedicineComparison(medicineName, apigClient) {
+    //
+    // }
+
+    function displayMedicineData(data) {
+        const tableBody = $("#medicine-table-body");
+        tableBody.empty();
+
+        data.forEach((medicine) => {
+            const tableRow = $("<tr></tr>");
+
+            tableRow.append(`<td>${medicine.seller_name}</td>`);
+            tableRow.append(`<td>${medicine.medicine_name}</td>`);
+            tableRow.append(`<td>${medicine.price}</td>`);
+            tableRow.append(`<td>${medicine.zip_code}</td>`);
+
+            tableBody.append(tableRow);
+        });
+    }
+
+</script>
 </body>
 </html>

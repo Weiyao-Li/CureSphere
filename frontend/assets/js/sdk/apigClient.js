@@ -86,13 +86,13 @@ apigClientFactory.newClient = function (config) {
     apigClient.bookAppointmentPost = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        apiGateway.core.utils.assertParametersDefined(params, ['patientId', 'doctorId', 'Time', 'Date'], ['body']);
+        apiGateway.core.utils.assertParametersDefined(params, ['patientId', 'doctorId'], ['body']);
         
         var bookAppointmentPostRequest = {
             verb: 'post'.toUpperCase(),
             path: pathComponent + uritemplate('/bookAppointment').expand(apiGateway.core.utils.parseParametersToObject(params, [])),
-            headers: apiGateway.core.utils.parseParametersToObject(params, ['patientId', 'doctorId', 'Time', 'Date']),
-            queryParams: apiGateway.core.utils.parseParametersToObject(params, []),
+            headers: apiGateway.core.utils.parseParametersToObject(params, ['patientId', 'doctorId']),
+            queryParams: apiGateway.core.utils.parseParametersToObject(params, ['Time', 'Date']),
             body: body
         };
         

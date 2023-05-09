@@ -35,6 +35,9 @@
     </style>
 </head>
 <body>
+<br>
+<button onclick="redirectLogin()">Back to Portal</button>
+<br>    
 <h1>Book Appointment</h1>
 <div>
     <label for="doctor_id">Doctor ID:</label>
@@ -88,7 +91,7 @@
 
     // call getDoctorAvailability function on page load to populate doctor_id and patient_id fields
     getDoctorAvailability();
-});
+});    
 
 var apigClient = apigClientFactory.newClient();
 
@@ -205,6 +208,16 @@ function bookAppointment() {
         }).catch(function(result) {
             console.log("Failed to book appointment: ", result);
         });
+}
+
+function redirectLogin() {
+    const role = localStorage.getItem('role').replace(/"/g, '');
+
+    if (role === 'patient') {
+        window.location.href = "patient_portal.html";
+    } else if (role === 'doctor') {
+        window.location.href = "doctor_portal.html";
+    }
 }
 
 function showMessage(message, color) {

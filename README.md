@@ -6,7 +6,8 @@ A full-stack and cloud-based platform designed to optimize the healthcare proces
 ## YouTube Link ##
 https://www.youtube.com/watch?v=9yDoWjNGgLE
 
-
+## Our Report ##
 ![image](https://github.com/Weiyao-Li/CureSphere/assets/96925606/03545960-2c29-4b11-aac9-7b81706c3ddb)
 
+## User Flow ##
 ![image](https://github.com/Weiyao-Li/CureSphere/blob/main/assets/user%20flow.png)

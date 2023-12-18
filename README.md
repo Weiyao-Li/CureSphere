@@ -8,3 +8,5 @@ https://www.youtube.com/watch?v=9yDoWjNGgLE
 
 
 ![image](https://github.com/Weiyao-Li/CureSphere/assets/96925606/03545960-2c29-4b11-aac9-7b81706c3ddb)
+
+![image](https://github.com/Weiyao-Li/CureSphere/blob/main/assets/user%20flow.png)

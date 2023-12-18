@@ -9,7 +9,7 @@ https://www.youtube.com/watch?v=9yDoWjNGgLE
 ## Architecture ##
 ![image](https://github.com/Weiyao-Li/CureSphere/blob/main/assets/architecture.png)
 
-## User Flow ##
+## [User Flow](https://github.com/Weiyao-Li/CureSphere/blob/main/assets/user%20flow.png) ##
 ![image](https://github.com/Weiyao-Li/CureSphere/blob/main/assets/user%20flow.png)
 
 ## Our Report ##
